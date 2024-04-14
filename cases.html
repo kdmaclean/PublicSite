@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="color-scheme" content="light" />
+    <meta name="color-scheme" content="light dark" />
     <title>Kyle Maclean - Business Analytics Teaching and Research Website</title>
     <meta name="description" content="A site about Kyle D. S. Maclean and his teaching and research. Also lots of miscellaneous projects and learnings." />
 
@@ -18,14 +18,14 @@
     <!-- Header -->
     <header>
       <hgroup>
-        <h1>Kyle <span style="color: rgb(107, 21, 107);">D. S.</span> Maclean</h1>
+        <h1>Kyle D. S. Maclean</h1>
         <p>Business Analytics Teaching Resources for Management Science/Operations Research</p>
       </hgroup>
       <nav>
         <ul>
           <li><a href="#" data-theme-switcher="auto">blah blah</a></li>
           <li><a href="cases.html" data-theme-switcher="light">Cases I've Published</a></li>
-          <li><a href="MacleanCV.docx" data-theme-switcher="dark">CV</a></li>
+          <li><a href="#" data-theme-switcher="dark">Other Stuff</a></li>
         </ul>
       </nav>
     </header>
@@ -35,15 +35,36 @@
     <main>
       <!-- Preview -->
       <section id="preview">
-        <h2>About Me</h2>
+        <h2>Preview</h2>
         <p>
-
-Hi! I am an Assistant Professor, Teaching Scholar at the <mark>Ivey Business School</mark> at Western University, in London, Ontario.
-
-My research is focused along two streams. The first is on how to apply Revenue Management (RM) techniques to the live entertainment industry. For instance, how do entertainment products become a success and how should firms engage in operational allocation and pricing decisions.
-
-Secondly, I am interested in how to create effective and scalable assessments and teaching tools in undergraduate classrooms
+          Sed ultricies dolor non ante vulputate hendrerit. Vivamus sit amet suscipit sapien. Nulla
+          iaculis eros a elit pharetra egestas.
         </p>
+        <form>
+          <input
+            type="text"
+            name="firstname"
+            placeholder="First name"
+            aria-label="First name"
+            required
+          />
+          <input
+            type="email"
+            name="email"
+            placeholder="Email address"
+            aria-label="Email address"
+            autocomplete="email"
+            required
+          />
+          <button type="submit">Subscribe</button>
+          <fieldset>
+            <label for="terms">
+              <input type="checkbox" role="switch" id="terms" name="terms" />
+              I agree to the
+              <a href="#" onclick="event.preventDefault()">Privacy Policy</a>
+            </label>
+          </fieldset>
+        </form>
       </section>
       <!-- ./ Preview -->
 
@@ -133,9 +154,105 @@ Secondly, I am interested in how to create effective and scalable assessments an
       </section>
       <!-- ./ Typography-->
 
-    
+      <!-- Form elements-->
+      <section id="form">
+        <form>
+          <h2>Form elements</h2>
+
+          <!-- Search -->
+          <label for="search">Search</label>
+          <input type="search" id="search" name="search" placeholder="Search" />
+
+          <!-- Text -->
+          <label for="text">Text</label>
+          <input type="text" id="text" name="text" placeholder="Text" />
+          <small>Curabitur consequat lacus at lacus porta finibus.</small>
+
+          <!-- Select -->
+          <label for="select">Select</label>
+          <select id="select" name="select" required>
+            <option value="" selected>Select…</option>
+            <option>…</option>
+          </select>
+
+          <!-- File browser -->
+          <label for="file"
+            >File browser
+            <input type="file" id="file" name="file" />
+          </label>
+
+          <!-- Range slider control -->
+          <label for="range"
+            >Range slider
+            <input type="range" min="0" max="100" value="50" id="range" name="range" />
+          </label>
+
+          <!-- States -->
+
+          <label for="valid">
+            Valid
+            <input type="text" id="valid" name="valid" placeholder="Valid" aria-invalid="false" />
+          </label>
+          <label for="invalid">
+            Invalid
+            <input
+              type="text"
+              id="invalid"
+              name="invalid"
+              placeholder="Invalid"
+              aria-invalid="true"
+            />
+          </label>
+          <label for="disabled">
+            Disabled
+            <input type="text" id="disabled" name="disabled" placeholder="Disabled" disabled />
+          </label>
+
+          <!-- Date-->
+          <label for="date"
+            >Date
+            <input type="date" id="date" name="date" />
+          </label>
+
+          <!-- Time-->
+          <label for="time"
+            >Time
+            <input type="time" id="time" name="time" />
+          </label>
+
+          <!-- Color-->
+          <label for="color"
+            >Color
+            <input type="color" id="color" name="color" value="#0eaaaa" />
+          </label>
 
    
+
+      <!-- Accordions -->
+      <section id="accordions">
+        <h2>Accordions</h2>
+        <details>
+          <summary>Accordion 1</summary>
+          <p>
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque urna diam,
+            tincidunt nec porta sed, auctor id velit. Etiam venenatis nisl ut orci consequat, vitae
+            tempus quam commodo. Nulla non mauris ipsum. Aliquam eu posuere orci. Nulla convallis
+            lectus rutrum quam hendrerit, in facilisis elit sollicitudin. Mauris pulvinar pulvinar
+            mi, dictum tristique elit auctor quis. Maecenas ac ipsum ultrices, porta turpis sit
+            amet, congue turpis.
+          </p>
+        </details>
+        <details open>
+          <summary>Accordion 2</summary>
+          <ul>
+            <li>Vestibulum id elit quis massa interdum sodales.</li>
+            <li>Nunc quis eros vel odio pretium tincidunt nec quis neque.</li>
+            <li>Quisque sed eros non eros ornare elementum.</li>
+            <li>Cras sed libero aliquet, porta dolor quis, dapibus ipsum.</li>
+          </ul>
+        </details>
+      </section>
+      <!-- ./ Accordions -->
 
       <!-- Article-->
       <article id="article">
