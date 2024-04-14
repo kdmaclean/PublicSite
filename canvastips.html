@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Kyle Maclean - Business Analytics Teaching and Research Website</title>
+    <meta name="description" content="A site about Kyle D. S. Maclean and his teaching and research. Also lots of miscellaneous projects and learnings." />
+
+    <!-- Pico.css -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@picocss/pico@2.0.6/css/pico.classless.min.css"
+    />
+  </head>
+
+  <body>
+        <!-- Header -->
+        <header>
+          <hgroup>
+            <h1>Kyle <span style="color: rgb(107, 21, 107);">D. S.</span> Maclean</h1>
+            <p>Business Analytics Teaching Resources for Management Science/Operations Research</p>
+          </hgroup>
+          <nav>
+            <ul>
+              <li><a href="index.html">About Me</a></li>
+              <li><a href="cases.html">Published Teaching Cases</a></li>
+              <li><a href="canvastips.html">Canvas Tips and Tricks</a></li>
+              <li><a href="MacleanCV.docx">CV</a></li>
+            </ul>
+          </nav>
+        </header>
+        <!-- ./ Header -->
+    
+    <!-- Main -->
+    <main>
+      <!-- Article-->
+      <article id="article">
+        <h2>Finding CDFs of normal distributions on Canvas Quizzes</h2>
+        <p>
+        Canvas quizzes have a wonderful feature called "Formula" answers, where a question can have randomized numbers for each student. When creating these types of questions,  you must enter the final correct answer as a formula based on the random variables.
+        The problem is that these formulas do not include many statistical functions.
+        </p>
+
+        <p>
+        The CDF of a normal distribution with mean <b>M</b> and standard deviation <b>S</b> can be approximated at point <b>X</b> with the following formula
+        </p>
+        <p>1/(1+e^(-0.07056*(((X-M)/(S))^3)-1.5976*((X-M)/(S))))</p>
+
+        <p>
+        This approximation was proposed by Bowling et al (2009).
+        </p>
+
+        <p>
+        Keep in mind that it is only a very good <mark>approximation</mark>, so I usually only check answers to the first or second decimal place.
+        </p>
+      </article>
+      <!-- ./ Article-->
+
+
+    </main>
+    <!-- ./ Main -->
+
+   <!-- Footer -->
+   <footer>
+    <!-- Add icon library -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <!-- Add font awesome icons -->
+    <a href="https://twitter.com/AnalyticsKyle" class="fa fa-twitter"></a>
+    <a href="https://www.linkedin.com/in/kyle-maclean-69931727/" class="fa fa-linkedin"></a>
+    <br>
+    <small
+      >Built with <a href="https://picocss.com">Pico</a> •
+      <a href="https://github.com/picocss/examples/blob/master/v2-html-classless/index.html"
+        >Source code</a
+      ></small
+    >
+  </footer>
+  <!-- ./ Footer -->
+
+ 
+
+    <!-- Minimal theme switcher -->
+    <script src="js/minimal-theme-switcher.js"></script>
+  </body>
+</html>
