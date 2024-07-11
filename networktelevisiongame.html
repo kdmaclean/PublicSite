@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Network Television Game</title>
+    <script src="game.js"></script>
+    <style>
+        /* Add your CSS styles here */
+    </style>
+</head>
+<body>
+    <h1>Network Television Game</h1>
+    
+    <div id="game-container">
+        <!-- Add your game elements here -->
+    </div>
+    
+    <script>
+        // Add your JavaScript code here
+        // Get the continue and new buttons
+        const continueButton = document.getElementById('continue-button');
+        const newButton = document.getElementById('new-button');
+
+        // Get the game container and graph element
+        const gameContainer = document.getElementById('game-container');
+        const graphElement = document.getElementById('graph');
+
+        // Add event listeners to the buttons
+        continueButton.addEventListener('click', continueGame);
+        newButton.addEventListener('click', newGame);
+
+        // Define the continueGame function
+        function continueGame() {
+            // Generate a random number between 1 and 100
+            const randomNumber = Math.floor(Math.random() * 100) + 1;
+
+            // Create a new element to display the number
+            const numberElement = document.createElement('p');
+            numberElement.textContent = `Number: ${randomNumber}`;
+
+            // Append the number element to the game container
+            gameContainer.appendChild(numberElement);
+
+            // Add the number to the graph
+            const graphBar = document.createElement('div');
+            graphBar.style.height = `${randomNumber}px`;
+            graphElement.appendChild(graphBar);
+        }
+
+        // Define the newGame function
+        function newGame() {
+            // Clear the game container and graph
+            gameContainer.innerHTML = '';
+            graphElement.innerHTML = '';
+        }
+
+        // Call the startGame function to begin the game
+        startGame();
+    </script>
+</body>
+</html>
