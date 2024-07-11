@@ -31,12 +31,12 @@
         }
         #show-answer {
             position: absolute;
-            top: 20px;
+            top: 0px;
             right: 20px;
         }
         #answer-info {
             position: absolute;
-            top: 80px;
+            top: 120px;
             right: 20px;
         }
     </style>
@@ -139,7 +139,7 @@
         function displayInfo() {
             calculateMetrics();
             d3.select("#info").html(`
-                <strong>Student's Line:</strong><br>
+                <strong>Current Line:</strong><br>
                 <strong>Equation:</strong> y = ${intercept.toFixed(2)} + ${slope.toFixed(2)}x<br>
                 <strong>R²:</strong> ${rSquared.toFixed(2)}<br>
                 <strong>SSE:</strong> ${sse.toFixed(2)}
