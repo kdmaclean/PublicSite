@@ -11,6 +11,10 @@
             opacity: 0.5;
         }
         .line {
+            stroke: black;
+        }
+        .intercept-handle, .slope-handle {
+            fill: blue;
             cursor: move;
         }
     </style>
@@ -51,12 +55,7 @@
                 .attr("x1", x(0))
                 .attr("y1", d => y(intercept))
                 .attr("x2", x(10))
-                .attr("y2", d => y(intercept + slope * 10))
-                .attr("stroke", "black")
-                .call(d3.drag()
-                    .on("start", dragstarted)
-                    .on("drag", dragged)
-                    .on("end", dragended));
+                .attr("y2", d => y(intercept + slope * 10));
 
             const points = g.selectAll(".point").data(data);
 
@@ -77,23 +76,40 @@
                 .attr("width", d => Math.abs(y(d.y) - y(intercept + slope * d.x)))
                 .attr("height", d => Math.abs(y(d.y) - y(intercept + slope * d.x)));
 
+            const interceptHandle = g.selectAll(".intercept-handle").data([intercept]);
+
+            interceptHandle.enter().append("circle")
+                .attr("class", "intercept-handle")
+                .attr("r", 8)
+                .call(d3.drag()
+                    .on("drag", dragIntercept))
+                .merge(interceptHandle)
+                .attr("cx", x(0))
+                .attr("cy", y(intercept));
+
+            const slopeHandle = g.selectAll(".slope-handle").data([slope]);
+
+            slopeHandle.enter().append("circle")
+                .attr("class", "slope-handle")
+                .attr("r", 8)
+                .call(d3.drag()
+                    .on("drag", dragSlope))
+                .merge(slopeHandle)
+                .attr("cx", x(10))
+                .attr("cy", y(intercept + slope * 10));
+
             displayInfo();
         }
 
-        function dragstarted(event, d) {
-            d3.select(this).raise().attr("stroke", "black");
-        }
-
-        function dragged(event, d) {
-            const dx = x.invert(event.x) - x.invert(event.subject.x1);
-            const dy = y.invert(event.y) - y.invert(event.subject.y1);
-            slope = dy / dx;
-            intercept = y.invert(event.subject.y1) - slope * x.invert(event.subject.x1);
+        function dragIntercept(event) {
+            intercept = y.invert(event.y);
             update();
         }
 
-        function dragended(event, d) {
-            d3.select(this).attr("stroke", null);
+        function dragSlope(event) {
+            const newY = y.invert(event.y);
+            slope = (newY - intercept) / 10;
+            update();
         }
 
         function displayInfo() {
