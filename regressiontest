@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive OLS Demonstration</title>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <style>
+        .square {
+            fill: lightcoral;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <h2>Interactive OLS Demonstration</h2>
+    <svg width="800" height="600"></svg>
+
+    <script>
+        const svg = d3.select("svg");
+        const margin = {top: 20, right: 20, bottom: 30, left: 40};
+        const width = +svg.attr("width") - margin.left - margin.right;
+        const height = +svg.attr("height") - margin.top - margin.bottom;
+        const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+        const x = d3.scaleLinear().domain([0, 10]).range([0, width]);
+        const y = d3.scaleLinear().domain([0, 10]).range([height, 0]);
+
+        const xAxis = d3.axisBottom(x);
+        const yAxis = d3.axisLeft(y);
+
+        g.append("g")
+            .attr("transform", `translate(0,${height})`)
+            .call(xAxis);
+
+        g.append("g")
+            .call(yAxis);
+
+        let data = [
+            {x: 2, y: 3},
+            {x: 4, y: 5},
+            {x: 6, y: 5},
+            {x: 8, y: 7}
+        ];
+
+        function update() {
+            const line = g.selectAll(".line").data([data]);
+
+            line.enter().append("line")
+                .attr("class", "line")
+                .merge(line)
+                .attr("x1", x(0))
+                .attr("y1", d => y(intercept))
+                .attr("x2", x(10))
+                .attr("y2", d => y(intercept + slope * 10))
+                .attr("stroke", "black");
+
+            const points = g.selectAll(".point").data(data);
+
+            points.enter().append("circle")
+                .attr("class", "point")
+                .attr("r", 5)
+                .call(d3.drag()
+                    .on("start", dragstarted)
+                    .on("drag", dragged)
+                    .on("end", dragended))
+                .merge(points)
+                .attr("cx", d => x(d.x))
+                .attr("cy", d => y(d.y));
+
+            const squares = g.selectAll(".square").data(data);
+
+            squares.enter().append("rect")
+                .attr("class", "square")
+                .merge(squares)
+                .attr("x", d => x(d.x) - Math.abs(y(d.y) - y(intercept + slope * d.x)) / 2)
+                .attr("y", d => Math.min(y(d.y), y(intercept + slope * d.x)))
+                .attr("width", d => Math.abs(y(d.y) - y(intercept + slope * d.x)))
+                .attr("height", d => Math.abs(y(d.y) - y(intercept + slope * d.x)));
+
+            calculateOLS();
+        }
+
+        function dragstarted(event, d) {
+            d3.select(this).raise().attr("stroke", "black");
+        }
+
+        function dragged(event, d) {
+            d.x = Math.max(0, Math.min(10, x.invert(event.x)));
+            d.y = Math.max(0, Math.min(10, y.invert(event.y)));
+            update();
+        }
+
+        function dragended(event, d) {
+            d3.select(this).attr("stroke", null);
+        }
+
+        function calculateOLS() {
+            const n = data.length;
+            const sumX = d3.sum(data, d => d.x);
+            const sumY = d3.sum(data, d => d.y);
+            const sumXY = d3.sum(data, d => d.x * d.y);
+            const sumXX = d3.sum(data, d => d.x * d.x);
+
+            slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+            intercept = (sumY - slope * sumX) / n;
+        }
+
+        let slope, intercept;
+        calculateOLS();
+        update();
+    </script>
+</body>
+</html>
