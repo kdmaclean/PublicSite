@@ -10,11 +10,15 @@
             fill: lightcoral;
             opacity: 0.5;
         }
+        .line {
+            cursor: move;
+        }
     </style>
 </head>
 <body>
     <h2>Interactive OLS Demonstration</h2>
     <svg width="800" height="600"></svg>
+    <div id="info" style="position: absolute; top: 20px; right: 20px; background-color: white; padding: 10px; border: 1px solid #ccc;"></div>
 
     <script>
         const svg = d3.select("svg");
@@ -36,12 +40,7 @@
         g.append("g")
             .call(yAxis);
 
-        let data = [
-            {x: 2, y: 3},
-            {x: 4, y: 5},
-            {x: 6, y: 5},
-            {x: 8, y: 7}
-        ];
+        let data = d3.range(4).map(() => ({x: Math.random() * 10, y: Math.random() * 10}));
 
         function update() {
             const line = g.selectAll(".line").data([data]);
@@ -53,17 +52,17 @@
                 .attr("y1", d => y(intercept))
                 .attr("x2", x(10))
                 .attr("y2", d => y(intercept + slope * 10))
-                .attr("stroke", "black");
+                .attr("stroke", "black")
+                .call(d3.drag()
+                    .on("start", dragstarted)
+                    .on("drag", dragged)
+                    .on("end", dragended));
 
             const points = g.selectAll(".point").data(data);
 
             points.enter().append("circle")
                 .attr("class", "point")
                 .attr("r", 5)
-                .call(d3.drag()
-                    .on("start", dragstarted)
-                    .on("drag", dragged)
-                    .on("end", dragended))
                 .merge(points)
                 .attr("cx", d => x(d.x))
                 .attr("cy", d => y(d.y));
@@ -78,7 +77,7 @@
                 .attr("width", d => Math.abs(y(d.y) - y(intercept + slope * d.x)))
                 .attr("height", d => Math.abs(y(d.y) - y(intercept + slope * d.x)));
 
-            calculateOLS();
+            displayInfo();
         }
 
         function dragstarted(event, d) {
@@ -86,8 +85,10 @@
         }
 
         function dragged(event, d) {
-            d.x = Math.max(0, Math.min(10, x.invert(event.x)));
-            d.y = Math.max(0, Math.min(10, y.invert(event.y)));
+            const dx = x.invert(event.x) - x.invert(event.subject.x1);
+            const dy = y.invert(event.y) - y.invert(event.subject.y1);
+            slope = dy / dx;
+            intercept = y.invert(event.subject.y1) - slope * x.invert(event.subject.x1);
             update();
         }
 
@@ -95,19 +96,23 @@
             d3.select(this).attr("stroke", null);
         }
 
-        function calculateOLS() {
-            const n = data.length;
-            const sumX = d3.sum(data, d => d.x);
-            const sumY = d3.sum(data, d => d.y);
-            const sumXY = d3.sum(data, d => d.x * d.y);
-            const sumXX = d3.sum(data, d => d.x * d.x);
-
-            slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
-            intercept = (sumY - slope * sumX) / n;
+        function displayInfo() {
+            calculateRSquared();
+            d3.select("#info").html(`
+                <strong>Regression Equation:</strong><br>
+                y = ${intercept.toFixed(2)} + ${slope.toFixed(2)}x<br>
+                <strong>R²:</strong> ${rSquared.toFixed(2)}
+            `);
         }
 
-        let slope, intercept;
-        calculateOLS();
+        function calculateRSquared() {
+            const meanY = d3.mean(data, d => d.y);
+            const ssTot = d3.sum(data, d => Math.pow(d.y - meanY, 2));
+            const ssRes = d3.sum(data, d => Math.pow(d.y - (intercept + slope * d.x), 2));
+            rSquared = 1 - ssRes / ssTot;
+        }
+
+        let slope = 0, intercept = d3.mean(data, d => d.y), rSquared;
         update();
     </script>
 </body>
