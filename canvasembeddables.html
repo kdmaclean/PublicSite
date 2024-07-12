@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Kyle Maclean - Business Analytics Teaching and Research Website</title>
+    <meta name="description" content="A site about Kyle D. S. Maclean and his teaching and research. Also lots of miscellaneous projects and learnings." />
+
+    <!-- Pico.css -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@picocss/pico@2.0.6/css/pico.classless.min.css"
+    />
+  </head>
+
+  <body>
+    <!-- Header -->
+    <header>
+      <hgroup>
+        <h1>Kyle <span style="color: rgb(107, 21, 107);">D. S.</span> Maclean</h1>
+        <p>Business Analytics Teaching Resources for Management Science/Operations Research</p>
+      </hgroup>
+      <nav>
+        <ul>
+          <li><a href="index.html">About Me</a></li>
+          <li><a href="cases.html">Published Teaching Cases</a></li>
+          <li><a href="canvastips.html">Canvas Tips and Tricks</a></li>
+          <li><a href="MacleanCV.docx">CV</a></li>
+        </ul>
+      </nav>
+    </header>
+    <!-- ./ Header -->
+    
+    <!-- Main -->
+    <main>
+        <!-- Introductory Section -->
+      <section>
+        <h2>Embeddable Applications for Canvas and Other LMS</h2>
+        <p>
+          Welcome! I offer a variety of embeddable applications designed for use in Canvas and other Learning Management Systems (LMS). These applications are free to use, provided that proper credit is given. Feel free to explore the examples below and use the embed codes to integrate these tools into your own LMS.
+        </p>
+      </section>
+      
+      <!-- Example Section -->
+      <section>
+        <h2>Example Application</h2>
+        <p>
+          This section provides a placeholder for an example application that can be embedded in your LMS. Below is a placeholder for the embed code that you can easily copy and paste into your system.
+        </p>
+        <pre><code id="embedCode">&lt;iframe src="https://example.com/application" width="600" height="400"&gt;&lt;/iframe&gt;</code></pre>
+        <button onclick="copyToClipboard()">Copy</button>
+      </section>
+
+      <script>
+        function copyToClipboard() {
+          var copyText = document.getElementById("embedCode").textContent;
+          navigator.clipboard.writeText(copyText).then(function() {
+            alert("Copied to clipboard");
+          });
+        }
+      </script>
+
+    </main>
+    <!-- ./ Main -->
+
+     <!-- Footer -->
+     <footer>
+      <!-- Add icon library -->
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+      <!-- Add font awesome icons -->
+      <a href="https://twitter.com/AnalyticsKyle" class="fa fa-twitter"></a>
+      <a href="https://www.linkedin.com/in/kyle-maclean-69931727/" class="fa fa-linkedin"></a>
+      <br>
+      <small
+        >Built with <a href="https://picocss.com">Pico</a> •
+        <a href="https://github.com/picocss/examples/blob/master/v2-html-classless/index.html"
+          >Source code</a
+        ></small
+      >
+    </footer>
+    <!-- ./ Footer -->
+
+ 
+
+    <!-- Minimal theme switcher -->
+    <script src="js/minimal-theme-switcher.js"></script>
+  </body>
+</html>

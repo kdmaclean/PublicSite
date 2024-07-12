@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive OLS Demonstration</title>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <style>
+        .square {
+            fill: lightblue;
+            opacity: 0.5;
+        }
+        .line {
+            stroke: black;
+        }
+        .intercept-handle, .slope-handle {
+            fill: blue;
+            cursor: move;
+        }
+        .answer-line {
+            stroke: black;
+            stroke-dasharray: 5;
+        }
+        .info-box {
+            position: absolute;
+            top: 510px;
+            left: 40px;
+            background-color: white;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+        #show-answer {
+            position: absolute;
+            top: 620px;
+            left: 40px;
+        }
+        #answer-info {
+            position: absolute;
+            top: 510px;
+            left: 250px;
+        }
+    #copyright {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        color: lightgrey;
+        font-size: 12px;
+    }
+    .axis {
+        font-size: 30px; /* Change this value to the desired font size */
+    }
+    </style>
+</head>
+<body>
+    <svg width="600" height="500"></svg>
+    <div id="info" class="info-box"></div>
+    <button id="show-answer" style="">Show Answer</button>
+    <div id="answer-info" class="info-box" style="display: none;"></div>
+    <div id="copyright">© Kyle D.S. Maclean</div>
+    <script>
+        function getParameterByName(name, url = window.location.href) {
+        name = name.replace(/[\[\]]/g, '\\$&');
+        const regex = new RegExp(`[?&]${name}(=([^&#]*)|&|#|$)`),
+            results = regex.exec(url);
+        if (!results) return null;
+        if (!results[2]) return '';
+        return decodeURIComponent(results[2].replace(/\+/g, ' '));
+        }
+
+        const numPoints = parseInt(getParameterByName('points')) || 4;
+        
+        function generateData(numPoints) {
+        return d3.range(numPoints).map(() => ({x: 2 + Math.random() * 6, y: 2 + Math.random() * 6}));
+        }
+        
+        function calculateOLS(data) {
+        const n = data.length;
+        const sumX = d3.sum(data, d => d.x);
+        const sumY = d3.sum(data, d => d.y);
+        const sumXY = d3.sum(data, d => d.x * d.y);
+        const sumXX = d3.sum(data, d => d.x * d.x);
+
+        const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+        const intercept = (sumY - slope * sumX) / n;
+        return { slope, intercept };
+        }
+
+        let data, optimalLine;
+        do {
+            data = generateData(numPoints);
+            optimalLine = calculateOLS(data);
+        } while (optimalLine.intercept < 0 || optimalLine.intercept > 10);
+
+        const svg = d3.select("svg");
+        const margin = {top: 20, right: 20, bottom: 30, left: 40};
+        const width = +svg.attr("width") - margin.left - margin.right;
+        const height = +svg.attr("height") - margin.top - margin.bottom;
+        const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+        const x = d3.scaleLinear().domain([0, 10]).range([0, width]);
+        const y = d3.scaleLinear().domain([0, 10]).range([height, 0]);
+
+        const xAxis = d3.axisBottom(x);
+        const yAxis = d3.axisLeft(y);
+
+        g.append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(xAxis)
+        .selectAll("text")
+        .style("font-size", "14px"); // Change this value to the desired font size
+
+        g.append("g")
+        .call(yAxis)
+        .selectAll("text")
+        .style("font-size", "14px"); // Change this value to the desired font sizee this value to the desired font size
+
+        function update() {
+            const line = g.selectAll(".line").data([data]);
+            line.enter().append("line")
+                .attr("class", "line")
+                .merge(line)
+                .attr("x1", x(0))
+                .attr("y1", d => y(intercept))
+                .attr("x2", x(10))
+                .attr("y2", d => y(intercept + slope * 10));
+
+            const points = g.selectAll(".point").data(data);
+
+            points.enter().append("circle")
+                .attr("class", "point")
+                .attr("r", 5)
+                .merge(points)
+                .attr("cx", d => x(d.x))
+                .attr("cy", d => y(d.y));
+
+            const squares = g.selectAll(".square").data(data);
+
+            squares.enter().append("rect")
+                .attr("class", "square")
+                .merge(squares)
+                .attr("x", d => x(d.x) - Math.abs(y(d.y) - y(intercept + slope * d.x)) / 2)
+                .attr("y", d => Math.min(y(d.y), y(intercept + slope * d.x)))
+                .attr("width", d => Math.abs(y(d.y) - y(intercept + slope * d.x)))
+                .attr("height", d => Math.abs(y(d.y) - y(intercept + slope * d.x)));
+
+            const interceptHandle = g.selectAll(".intercept-handle").data([intercept]);
+
+            interceptHandle.enter().append("circle")
+                .attr("class", "intercept-handle")
+                .attr("r", 8)
+                .call(d3.drag()
+                    .on("drag", dragIntercept))
+                .merge(interceptHandle)
+                .attr("cx", x(0))
+                .attr("cy", y(intercept));
+
+            const slopeHandle = g.selectAll(".slope-handle").data([slope]);
+
+            slopeHandle.enter().append("circle")
+                .attr("class", "slope-handle")
+                .attr("r", 8)
+                .call(d3.drag()
+                    .on("drag", dragSlope))
+                .merge(slopeHandle)
+                .attr("cx", x(10))
+                .attr("cy", y(intercept + slope * 10));
+
+            displayInfo();
+        }
+
+        function dragIntercept(event) {
+            intercept = y.invert(event.y);
+            update();
+        }
+
+        function dragSlope(event) {
+            const newY = y.invert(event.y);
+            slope = (newY - intercept) / 10;
+            update();
+        }
+
+        function displayInfo() {
+            calculateMetrics();
+            d3.select("#info").html(`
+                <strong>Current Line:</strong><br>
+                <strong>Equation:</strong> y = ${intercept.toFixed(2)} + ${slope.toFixed(2)}x<br>
+                <strong>R²:</strong> ${rSquared.toFixed(2)}<br>
+                <strong>SSE:</strong> ${sse.toFixed(2)}
+            `);
+        }
+
+        function calculateMetrics() {
+            const meanY = d3.mean(data, d => d.y);
+            const ssTot = d3.sum(data, d => Math.pow(d.y - meanY, 2));
+            const ssRes = d3.sum(data, d => Math.pow(d.y - (intercept + slope * d.x), 2));
+            rSquared = 1 - ssRes / ssTot;
+            sse = ssRes;
+        }
+
+        function showAnswer() {
+            //calculateOLS();
+            const answerLine = g.selectAll(".answer-line").data([data]);
+
+            answerLine.enter().append("line")
+                .attr("class", "answer-line")
+                .merge(answerLine)
+                .attr("x1", x(0))
+                .attr("y1", d => y(optimalLine.intercept))
+                .attr("x2", x(10))
+                .attr("y2", d => y(optimalLine.intercept + optimalLine.slope * 10));
+
+            calculateOptimalMetrics();
+            d3.select("#answer-info").style("display", "block").html(`
+                <strong>Optimal Line (OLS):</strong><br>
+                <strong>Equation:</strong> y = ${optimalLine.intercept.toFixed(2)} + ${optimalLine.slope.toFixed(2)}x<br>
+                <strong>R²:</strong> ${optimalRSquared.toFixed(2)}<br>
+                <strong>SSE:</strong> ${optimalSSE.toFixed(2)}
+            `);
+        }
+
+        function calculateOptimalMetrics() {
+            const meanY = d3.mean(data, d => d.y);
+            const ssTot = d3.sum(data, d => Math.pow(d.y - meanY, 2));
+            const ssRes = d3.sum(data, d => Math.pow(d.y - (optimalLine.intercept + optimalLine.slope * d.x), 2));
+            optimalRSquared = 1 - ssRes / ssTot;
+            optimalSSE = ssRes;
+        }
+
+        let slope = 0, intercept = d3.mean(data, d => d.y), rSquared, sse;
+        let optimalRSquared, optimalSSE;
+
+        document.getElementById("show-answer").addEventListener("click", showAnswer);
+
+        update();
+    </script>
+</body>
+</html>
