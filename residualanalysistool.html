@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Residual Analysis Tool</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .chart { display: inline-block; margin: 20px; }
+        .hidden { display: none; }
+        .residual-line { stroke: red; stroke-width: 1; }
+        .regression-line { stroke: blue; stroke-width: 2; }
+        .point { fill: black; }
+        .navbar { float: left; margin-right: 20px; }
+        .navbar button { display: block; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Residual Analysis Tool</h1>
+    <div class="navbar">
+        <button onclick="showScatterPlot()">Scatter Plot</button>
+        <button onclick="showResidualPlot()">Residual Plot</button>
+    </div>
+    <div id="scatter-plot" class="chart"></div>
+    <div id="residual-plot" class="chart hidden"></div>
+
+    <script>
+        const width = 500, height = 500, margin = 40;
+        const n = 20; // Number of random points
+
+        // Generate random data points
+        const data = Array.from({ length: n }, () => ({
+            x: Math.random() * 10,
+            y: Math.random() * 10
+        }));
+
+        // Create scales
+        const xScale = d3.scaleLinear().domain([0, 10]).range([margin, width - margin]);
+        const yScale = d3.scaleLinear().domain([0, 10]).range([height - margin, margin]);
+        const residualYScale = d3.scaleLinear().domain([-5, 5]).range([height - margin, margin]);
+
+        // Create SVG containers
+        const svgScatter = d3.select("#scatter-plot").append("svg")
+            .attr("width", width).attr("height", height);
+
+        const svgResidual = d3.select("#residual-plot").append("svg")
+            .attr("width", width).attr("height", height);
+
+        // Create scatter plot
+        svgScatter.selectAll("circle").data(data).enter()
+            .append("circle").attr("cx", d => xScale(d.x)).attr("cy", d => yScale(d.y))
+            .attr("r", 5).attr("class", "point");
+
+        // Linear regression function
+        function linearRegression(data) {
+            const xMean = d3.mean(data, d => d.x);
+            const yMean = d3.mean(data, d => d.y);
+            const num = d3.sum(data, d => (d.x - xMean) * (d.y - yMean));
+            const den = d3.sum(data, d => (d.x - xMean) ** 2);
+            const slope = num / den;
+            const intercept = yMean - slope * xMean;
+            return { slope, intercept };
+        }
+
+        // Calculate regression line and residuals
+        const { slope, intercept } = linearRegression(data);
+        const regressionLine = data.map(d => ({ x: d.x, y: slope * d.x + intercept }));
+        const residuals = data.map(d => ({ x: d.x, y: d.y, residual: d.y - (slope * d.x + intercept) }));
+
+        // Draw regression line
+        svgScatter.append("line")
+            .attr("x1", xScale(0)).attr("y1", yScale(intercept))
+            .attr("x2", xScale(10)).attr("y2", yScale(slope * 10 + intercept))
+            .attr("class", "regression-line");
+
+        // Draw residual lines
+        svgScatter.selectAll(".residual-line").data(residuals).enter()
+            .append("line")
+            .attr("x1", d => xScale(d.x)).attr("y1", d => yScale(d.y))
+            .attr("x2", d => xScale(d.x)).attr("y2", d => yScale(slope * d.x + intercept))
+            .attr("class", "residual-line");
+
+        // Create residual plot
+        const residualPoints = residuals.map(d => ({ x: d.x, y: d.residual }));
+        svgResidual.selectAll("circle").data(residualPoints).enter()
+            .append("circle").attr("cx", d => xScale(d.x)).attr("cy", d => residualYScale(d.y))
+            .attr("r", 5).attr("class", "point");
+
+        // Draw horizontal line at zero on the residual plot
+        svgResidual.append("line")
+            .attr("x1", xScale(0)).attr("x2", xScale(10))
+            .attr("y1", residualYScale(0)).attr("y2", residualYScale(0))
+            .attr("stroke", "black").attr("stroke-width", 1).attr("stroke-dasharray", "5,5");
+
+        // Axes
+        const xAxis = d3.axisBottom(xScale);
+        const yAxis = d3.axisLeft(yScale);
+        const residualYAxis = d3.axisLeft(residualYScale);
+
+        svgScatter.append("g").attr("transform", `translate(0,${height - margin})`).call(xAxis);
+        svgScatter.append("g").attr("transform", `translate(${margin},0)`).call(yAxis);
+        svgResidual.append("g").attr("transform", `translate(0,${height - margin})`).call(xAxis);
+        svgResidual.append("g").attr("transform", `translate(${margin},0)`).call(residualYAxis);
+
+        // Labels
+        svgScatter.append("text")
+            .attr("x", width / 2).attr("y", height - 5)
+            .attr("text-anchor", "middle")
+            .text("X Axis");
+
+        svgScatter.append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("x", -height / 2).attr("y", 15)
+            .attr("text-anchor", "middle")
+            .text("Y Axis");
+
+        svgResidual.append("text")
+            .attr("x", width / 2).attr("y", height - 5)
+            .attr("text-anchor", "middle")
+            .text("X Axis");
+
+        svgResidual.append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("x", -height / 2).attr("y", 15)
+            .attr("text-anchor", "middle")
+            .text("Residuals");
+
+        // Functions to show/hide plots
+        function showScatterPlot() {
+            document.getElementById("scatter-plot").classList.remove("hidden");
+            document.getElementById("residual-plot").classList.add("hidden");
+        }
+
+        function showResidualPlot() {
+            document.getElementById("scatter-plot").classList.add("hidden");
+            document.getElementById("residual-plot").classList.remove("hidden");
+        }
+    </script>
+</body>
+</html>
