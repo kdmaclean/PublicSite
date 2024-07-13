@@ -12,7 +12,27 @@
         .regression-line { stroke: blue; stroke-width: 2; }
         .point { fill: black; }
         .navbar { float: left; margin-right: 20px; }
-        .navbar button { display: block; margin-bottom: 10px; }
+        .navbar button {
+            display: block;
+            width: 150px;
+            padding: 10px;
+            margin-bottom: 0px;
+            border: none;
+            background-color: rgb(226, 226, 226);
+            color: black;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 0px;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+.navbar button:hover {
+    background-color: #c0c0c0;
+}
+
+.navbar button:active {
+    transform: scale(0.98);
+}
     </style>
 </head>
 <body>
@@ -82,15 +102,19 @@
 
         // Create residual plot
         const residualPoints = residuals.map(d => ({ x: d.x, y: d.residual }));
-        svgResidual.selectAll("circle").data(residualPoints).enter()
-            .append("circle").attr("cx", d => xScale(d.x)).attr("cy", d => residualYScale(d.y))
-            .attr("r", 5).attr("class", "point");
+
+            svgResidual.selectAll("circle").data(residualPoints).enter()
+    .append("circle")
+    .attr("cx", d => xScale(d.x))
+    .attr("cy", d => residualYScale(d.y))
+    .attr("r", 5)
+    .attr("fill", "red");  // Set the fill color to red
 
         // Draw horizontal line at zero on the residual plot
         svgResidual.append("line")
             .attr("x1", xScale(0)).attr("x2", xScale(10))
             .attr("y1", residualYScale(0)).attr("y2", residualYScale(0))
-            .attr("stroke", "black").attr("stroke-width", 1).attr("stroke-dasharray", "5,5");
+            .attr("stroke", "blue").attr("stroke-width", 1).attr("stroke-dasharray", "5,5");
 
         // Axes
         const xAxis = d3.axisBottom(xScale);
