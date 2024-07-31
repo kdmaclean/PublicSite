@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extended Regression Visualization</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        #container { width: 80%; margin: 0 auto; }
+        #model { text-align: center; font-size: 1.5em; margin: 20px 0; }
+        button { margin-right: 10px; }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <h1>Extended Regression Visualization</h1>
+        <div id="model">Y = b₀</div>
+        <button onclick="toggleX()">Toggle X Variable</button>
+        <button onclick="toggleDummy()">Toggle Dummy Variable</button>
+        <button onclick="toggleInteraction()">Toggle Interaction Variable</button>
+        <canvas id="chart"></canvas>
+    </div>
+
+    <script>
+        let chart;
+        let data = [];
+        let includeX = false;
+        let includeDummy = false;
+        let includeInteraction = false;
+
+        function generateData() {
+            data = [];  // Clear the data array before generating new data
+            for (let i = 0; i < 100; i++) {
+                let x = Math.random() * 10;
+                let group = Math.random() < 0.5 ? 0 : 1;
+                let y = 2 + 3 * x + 5 * group + 2 * group * x + (Math.random() - 0.5) * 2;  // Adjusted for different slopes
+                data.push({x, y, group});
+            }
+        }
+
+        function updateChart() {
+            let regressionLines = calculateRegression();
+
+            chart.data.datasets[0].data = data.filter(d => d.group === 0);
+            chart.data.datasets[1].data = data.filter(d => d.group === 1);
+            chart.data.datasets[2].data = regressionLines[0];
+            chart.data.datasets[3].data = includeDummy ? regressionLines[1] : [];
+            chart.update();
+
+            let modelText = 'Y = b₀';
+            if (includeX) modelText += ' + b₁X';
+            if (includeDummy) modelText += ' + b₂D';
+            if (includeInteraction) modelText += ' + b₃XD';
+            document.getElementById('model').textContent = modelText;
+        }
+
+        function calculateRegression() {
+            let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0, sumD = 0, sumDY = 0, sumXD = 0, sumX2D = 0, sumXDY = 0;
+            let n = data.length;
+            
+            data.forEach(point => {
+                sumX += point.x;
+                sumY += point.y;
+                sumXY += point.x * point.y;
+                sumX2 += point.x * point.x;
+                sumD += point.group;
+                sumDY += point.group * point.y;
+                sumXD += point.x * point.group;
+                sumX2D += point.x * point.x * point.group;
+                sumXDY += point.x * point.group * point.y;
+            });
+
+            let meanY = sumY / n;
+            let slope = 0, dummyCoef = 0, interactionCoef = 0, intercept = meanY;
+
+            if (includeX && includeDummy && includeInteraction) {
+                let denominator = (n * sumX2 - sumX * sumX) * (n * sumD - sumD * sumD) - (n * sumXD - sumX * sumD) ** 2;
+                slope = ((n * sumD - sumD * sumD) * (n * sumXY - sumX * sumY) - (n * sumXD - sumX * sumD) * (n * sumDY - sumD * sumY)) / denominator;
+                dummyCoef = ((n * sumX2 - sumX * sumX) * (n * sumDY - sumD * sumY) - (n * sumXD - sumX * sumD) * (n * sumXY - sumX * sumY)) / denominator;
+                interactionCoef = (sumXDY - sumXD * sumY / n - sumXY * sumD / n + sumX * sumD * sumY / (n * n)) / (sumX2D - sumXD * sumX / n - sumX * sumXD / n + sumX * sumD * sumX / (n * n));
+                intercept = (sumY - slope * sumX - dummyCoef * sumD - interactionCoef * sumXD) / n;
+            } else if (includeX && includeDummy) {
+                let denominator = (n * sumX2 - sumX * sumX) * (n * sumD - sumD * sumD) - (n * sumXD - sumX * sumD) ** 2;
+                slope = ((n * sumD - sumD * sumD) * (n * sumXY - sumX * sumY) - (n * sumXD - sumX * sumD) * (n * sumDY - sumD * sumY)) / denominator;
+                dummyCoef = ((n * sumX2 - sumX * sumX) * (n * sumDY - sumD * sumY) - (n * sumXD - sumX * sumD) * (n * sumXY - sumX * sumY)) / denominator;
+                intercept = (sumY - slope * sumX - dummyCoef * sumD) / n;
+            } else if (includeX) {
+                slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+                intercept = (sumY - slope * sumX) / n;
+            } else if (includeDummy) {
+                dummyCoef = (sumDY / sumD) - (sumY - sumDY) / (n - sumD);
+                intercept = meanY - dummyCoef * (sumD / n);
+            }
+
+            let line1 = [{x: 0, y: intercept}, {x: 10, y: intercept + slope * 10}];
+            let line2 = [{x: 0, y: intercept + dummyCoef}, {x: 10, y: intercept + dummyCoef + slope * 10 + interactionCoef * 10}];
+
+            return [line1, line2];
+        }
+
+        function toggleX() {
+            includeX = !includeX;
+            updateChart();
+        }
+
+        function toggleDummy() {
+            includeDummy = !includeDummy;
+            updateChart();
+        }
+
+        function toggleInteraction() {
+            includeInteraction = !includeInteraction;
+            updateChart();
+        }
+
+        generateData();
+
+        chart = new Chart('chart', {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Group 0',
+                    data: [],
+                    backgroundColor: 'blue'
+                }, {
+                    label: 'Group 1',
+                    data: [],
+                    backgroundColor: 'green'
+                }, {
+                    label: 'Regression Line (Group 0)',
+                    data: [],
+                    type: 'line',
+                    borderColor: 'red',
+                    fill: false
+                }, {
+                    label: 'Regression Line (Group 1)',
+                    data: [],
+                    type: 'line',
+                    borderColor: 'orange',
+                    fill: false
+                }]
+            },
+            options: {
+                scales: {
+                    x: {title: {display: true, text: 'X'}},
+                    y: {title: {display: true, text: 'Y'}}
+                }
+            }
+        });
+
+        updateChart();
+    </script>
+</body>
+</html>

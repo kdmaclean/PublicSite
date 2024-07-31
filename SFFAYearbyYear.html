@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Regression Visualization</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #chart {
+            width: 800px;
+            height: 400px;
+            margin-bottom: 20px;
+        }
+        .controls, .regression-details {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+        .controls div {
+            width: 30%;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        button {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Regression Visualization</h1>
+    <button onclick="generateAndRenderData()">Refresh Data</button>
+    <div id="chart"></div>
+    <div class="controls">
+        <div>
+            <h3>2013</h3>
+            <label>Intercept: <input type="number" id="intercept_input_1" value="0"></label><br>
+            <label>Slope: <input type="number" id="slope_input_1" value="0.7"></label><br>
+            <label>Noise: <input type="number" id="noise_input_1" value="1"></label><br>
+        </div>
+        <div>
+            <h3>2014</h3>
+            <label>Intercept: <input type="number" id="intercept_input_2" value="0"></label><br>
+            <label>Slope: <input type="number" id="slope_input_2" value="0.6"></label><br>
+            <label>Noise: <input type="number" id="noise_input_2" value="1"></label><br>
+        </div>
+        <div>
+            <h3>2015</h3>
+            <label>Intercept: <input type="number" id="intercept_input_3" value="0"></label><br>
+            <label>Slope: <input type="number" id="slope_input_3" value="0.5"></label><br>
+            <label>Noise: <input type="number" id="noise_input_3" value="1"></label><br>
+        </div>
+    </div>
+    <div class="regression-details">
+        <table>
+            <tr>
+                <th>Statistic</th>
+                <th>2013</th>
+                <th>2014</th>
+                <th>2015</th>
+            </tr>
+            <tr>
+                <td>Intercept</td>
+                <td id="intercept_1"></td>
+                <td id="intercept_2"></td>
+                <td id="intercept_3"></td>
+            </tr>
+            <tr>
+                <td>Slope</td>
+                <td id="slope_1"></td>
+                <td id="slope_2"></td>
+                <td id="slope_3"></td>
+            </tr>
+            <tr>
+                <td>R<sup>2</sup></td>
+                <td id="r2_1"></td>
+                <td id="r2_2"></td>
+                <td id="r2_3"></td>
+            </tr>
+        </table>
+    </div>
+    
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstat/1.9.4/jstat.min.js"></script>
+    <script>
+        function generateData(intercept, slope, noise) {
+            return Array.from({length: 100}, (_, i) => {
+                const x = Math.random() * 10;
+                const y = intercept + slope * x + (Math.random() * 2 - 1) * noise; // noise between -noise and noise
+                return {x, y};
+            });
+        }
+
+        function generateAndRenderData() {
+            const intercepts = [
+                parseFloat(document.getElementById('intercept_input_1').value),
+                parseFloat(document.getElementById('intercept_input_2').value),
+                parseFloat(document.getElementById('intercept_input_3').value)
+            ];
+
+            const slopes = [
+                parseFloat(document.getElementById('slope_input_1').value),
+                parseFloat(document.getElementById('slope_input_2').value),
+                parseFloat(document.getElementById('slope_input_3').value)
+            ];
+
+            const noises = [
+                parseFloat(document.getElementById('noise_input_1').value),
+                parseFloat(document.getElementById('noise_input_2').value),
+                parseFloat(document.getElementById('noise_input_3').value)
+            ];
+
+            const colors = ["steelblue", "orange", "green"];
+            const data = slopes.map((slope, i) => generateData(intercepts[i], slope, noises[i]));
+
+            // Set up the SVG and margins
+            const margin = {top: 20, right: 30, bottom: 30, left: 40},
+                  width = 800 - margin.left - margin.right,
+                  height = 400 - margin.top - margin.bottom;
+
+            d3.select("#chart").html(""); // Clear previous chart
+
+            const svg = d3.select("#chart")
+                          .append("svg")
+                          .attr("width", width + margin.left + margin.right)
+                          .attr("height", height + margin.top + margin.bottom)
+                          .append("g")
+                          .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            // Set up scales
+            const x = d3.scaleLinear()
+                        .domain([0, 10])
+                        .range([0, width]);
+
+            const y = d3.scaleLinear()
+                        .domain([0, d3.max(data.flat(), d => d.y)])
+                        .range([height, 0]);
+
+            // Add axes
+            svg.append("g")
+               .attr("transform", `translate(0,${height})`)
+               .call(d3.axisBottom(x));
+
+            svg.append("g")
+               .call(d3.axisLeft(y));
+
+            // Add points and regression lines for each group
+            data.forEach((groupData, i) => {
+                // Add points
+                svg.selectAll(`.point${i}`)
+                   .data(groupData)
+                   .enter().append("circle")
+                   .attr("class", `point${i}`)
+                   .attr("cx", d => x(d.x))
+                   .attr("cy", d => y(d.y))
+                   .attr("r", 3)
+                   .attr("fill", colors[i]);
+
+                // Extract x and y values
+                const xValues = groupData.map(d => d.x);
+                const yValues = groupData.map(d => d.y);
+
+                // Prepare data for jStat
+                const A = xValues.map(x => [1, x]); // Add a column of ones for the intercept
+
+                // Calculate regression using jStat
+                const model = jStat.models.ols(yValues, A);
+                const intercept = model.coef[0];
+                const slope = model.coef[1];
+                const r2 = model.R2;
+                const intercept_pvalue = model.t.p[0];
+                const slope_pvalue = model.t.p[1];
+
+                // Regression line function
+                const regressionLine = x => intercept + slope * x;
+
+                // Add regression line
+                const regressionPoints = [
+                    {x: 0, y: regressionLine(0)},
+                    {x: 10, y: regressionLine(10)}
+                ];
+
+                svg.append("line")
+                   .attr("x1", x(regressionPoints[0].x))
+                   .attr("y1", y(regressionPoints[0].y))
+                   .attr("x2", x(regressionPoints[1].x))
+                   .attr("y2", y(regressionPoints[1].y))
+                   .attr("stroke", colors[i])
+                   .attr("stroke-width", 2);
+
+                // Display regression details
+                document.getElementById(`r2_${i+1}`).innerText = r2.toFixed(5);
+                document.getElementById(`intercept_${i+1}`).innerText = `${intercept.toFixed(3)} (${intercept_pvalue.toFixed(5)})`;
+                document.getElementById(`slope_${i+1}`).innerText = `${slope.toFixed(3)} (${slope_pvalue.toFixed(5)})`;
+            });
+        }
+
+        // Initial render
+        generateAndRenderData();
+    </script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generate Image</title>
+    <title>Excel-like Screenshot</title>
 </head>
 <body>
     <canvas id="myCanvas"></canvas>
@@ -19,26 +19,53 @@
             return params;
         }
 
-        function drawImage() {
+        function drawExcelLikeTable() {
             let params = getQueryParams();
-            let width = parseInt(params.width) || 200;
-            let height = parseInt(params.height) || 200;
-            let color = params.color || 'blue';
+            let rows = parseInt(params.rows) || 10;
+            let cols = parseInt(params.cols) || 5;
+            let cellWidth = 100;
+            let cellHeight = 30;
+            let rowHeaderWidth = 40;
+            let canvasWidth = cols * cellWidth + rowHeaderWidth;
+            let canvasHeight = (rows + 1) * cellHeight;
 
             let canvas = document.getElementById('myCanvas');
-            canvas.width = width;
-            canvas.height = height;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
             let ctx = canvas.getContext('2d');
 
-            ctx.fillStyle = color;
-            ctx.fillRect(0, 0, width, height);
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
 
-            ctx.fillStyle = 'white';
-            ctx.font = '20px Arial';
-            ctx.fillText(`${width}x${height}`, 10, 30);
+            // Draw header row
+            ctx.fillStyle = '#f4f4f4';
+            ctx.fillRect(rowHeaderWidth, 0, canvasWidth - rowHeaderWidth, cellHeight);
+            ctx.fillStyle = '#000';
+            for (let col = 0; col < cols; col++) {
+                ctx.strokeRect(rowHeaderWidth + col * cellWidth, 0, cellWidth, cellHeight);
+                ctx.fillText(String.fromCharCode(65 + col), rowHeaderWidth + col * cellWidth + cellWidth / 2, cellHeight / 2);
+            }
+
+            // Draw row header column
+            ctx.fillStyle = '#f4f4f4';
+            ctx.fillRect(0, 0, rowHeaderWidth, canvasHeight);
+            ctx.fillStyle = '#000';
+            for (let row = 1; row <= rows; row++) {
+                ctx.strokeRect(0, row * cellHeight, rowHeaderWidth, cellHeight);
+                ctx.fillText(`${row}`, rowHeaderWidth / 2, row * cellHeight + cellHeight / 2);
+            }
+
+            // Draw data rows
+            for (let row = 1; row <= rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    ctx.strokeRect(rowHeaderWidth + col * cellWidth, row * cellHeight, cellWidth, cellHeight);
+                    ctx.fillText(`R${row}C${col + 1}`, rowHeaderWidth + col * cellWidth + cellWidth / 2, row * cellHeight + cellHeight / 2);
+                }
+            }
         }
 
-        window.onload = drawImage;
+        window.onload = drawExcelLikeTable;
     </script>
 </body>
 </html>

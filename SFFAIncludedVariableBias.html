@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Included Variable Bias Visualization</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px;
+        }
+
+        main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 80%;
+        }
+
+        .scatterplots {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+        }
+
+        .plot {
+            width: 30%;
+        }
+        
+        .controls, .description {
+    margin-top: 20px;
+    text-align: left;
+    width: 80%;
+}
+
+.highlight {
+    background-color: #ffcccc; /* Light red highlight */
+}
+
+.legend {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.legend-box {
+    width: 20px;
+    height: 20px;
+    background-color: #ffcccc; /* Light red highlight */
+    margin-right: 10px;
+}
+
+.legend-text {
+    font-size: 14px;
+}
+
+        .regression-output {
+            margin-top: 20px;
+            width: 80%;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: center;
+        }
+
+        footer {
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstat/1.9.4/jstat.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Included Variable Bias Visualization</h1>
+        <p>Explore how including an intermediate variable affects the relationship between an initial and an outcome variable.</p>
+        <button id="resetData">Reset Data</button>
+    </header>
+    <main>
+        <div class="scatterplots">
+            <div class="plot" id="plot1">
+                <h3>A vs. B</h3>
+                <canvas id="scatterplot1"></canvas>
+            </div>
+            <div class="plot" id="plot2">
+                <h3>B vs. C</h3>
+                <canvas id="scatterplot2"></canvas>
+            </div>
+            <div class="plot" id="plot3">
+                <h3>A vs. C</h3>
+                <canvas id="scatterplot3"></canvas>
+            </div>
+        </div>
+        <div class="controls">
+            <h3>Controls</h3>
+            <label>
+                <input type="checkbox" id="includeB">
+                Include B in A vs. C analysis
+            </label>
+        </div>
+        <div class="description">
+            <h3>Description</h3>
+            <p id="descriptionText">Initially, we see the direct relationship between A and C...</p>
+        </div>
+        <div class="regression-output" id="regressionOutput">
+            <h3>Regression Output</h3>
+            <div class="legend">
+                <div class="legend-box"></div>
+                <div class="legend-text">Not Statistically Significant (p-value > 0.05)</div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Variable</th>
+                        <th>Coefficient</th>
+                        <th>p-value</th>
+                    </tr>
+                </thead>
+                <tbody id="regressionTableBody">
+                    <!-- Regression results will be inserted here -->
+                </tbody>
+            </table>
+            <p id="r2Text">R2: Calculating...</p>
+        </div>
+    </main>
+    <script>
+        let plot1, plot2, plot3;
+
+        function generateData() {
+            const A = Array.from({ length: 50 }, (_, i) => i + 1);
+            const B = A.map(a => 2 * a + Math.random() * 20 - 10); // B = 2A + more noise
+            const C = B.map(b => 1.5 * b + Math.random() * 30 - 15); // C = 1.5B + more noise
+            return { A, B, C };
+        }
+
+        function updateScatterPlots(data) {
+            const dataAB = {
+                datasets: [{
+                    label: 'A vs. B',
+                    data: data.A.map((a, i) => ({ x: a, y: data.B[i] })),
+                    backgroundColor: 'red'
+                }]
+            };
+
+            const dataBC = {
+                datasets: [{
+                    label: 'B vs. C',
+                    data: data.B.map((b, i) => ({ x: b, y: data.C[i] })),
+                    backgroundColor: 'blue'
+                }]
+            };
+
+            const dataAC = {
+                datasets: [{
+                    label: 'A vs. C',
+                    data: data.A.map((a, i) => ({ x: a, y: data.C[i] })),
+                    backgroundColor: 'green'
+                }]
+            };
+
+            if (plot1) plot1.destroy();
+            if (plot2) plot2.destroy();
+            if (plot3) plot3.destroy();
+
+            plot1 = new Chart(scatterplot1, {
+                type: 'scatter',
+                data: dataAB,
+                options: {
+                    scales: {
+                        x: { title: { display: true, text: 'A' } },
+                        y: { title: { display: true, text: 'B' } }
+                    }
+                }
+            });
+
+            plot2 = new Chart(scatterplot2, {
+                type: 'scatter',
+                data: dataBC,
+                options: {
+                    scales: {
+                        x: { title: { display: true, text: 'B' } },
+                        y: { title: { display: true, text: 'C' } }
+                    }
+                }
+            });
+
+            plot3 = new Chart(scatterplot3, {
+                type: 'scatter',
+                data: dataAC,
+                options: {
+                    scales: {
+                        x: { title: { display: true, text: 'A' } },
+                        y: { title: { display: true, text: 'C' } }
+                    }
+                }
+            });
+        }
+
+        function calculateRegression(includeB, data) {
+            const { A, B, C } = data;
+            let model;
+
+            if (includeB) {
+                const X = A.map((a, i) => [1, a, B[i]]); // Add a column of ones for the intercept
+                model = jStat.models.ols(C, X);
+            } else {
+                const A_with_intercept = A.map(x => [1, x]); // Add a column of ones for the intercept
+                model = jStat.models.ols(C, A_with_intercept);
+            }
+
+            return {
+                coefficients: model.coef.map(coef => coef.toFixed(2)),
+                R2: model.R2.toFixed(2),
+                tP: model.t.p.map(p => p.toFixed(2))
+            };
+        }
+
+        function updateRegressionOutput(includeB, data) {
+            const regressionResult = calculateRegression(includeB, data);
+            const regressionTableBody = document.getElementById('regressionTableBody');
+
+            regressionTableBody.innerHTML = ''; // Clear previous results
+
+            const variables = includeB ? ['Intercept', 'A', 'B'] : ['Intercept', 'A'];
+            variables.forEach((variable, index) => {
+                const row = document.createElement('tr');
+                const variableCell = document.createElement('td');
+                variableCell.innerText = variable;
+                const coefCell = document.createElement('td');
+                coefCell.innerText = regressionResult.coefficients[index];
+                const pValueCell = document.createElement('td');
+                pValueCell.innerText = regressionResult.tP[index];
+
+                if (includeB && variable === 'A' && parseFloat(regressionResult.tP[index]) > 0.05) {
+                    row.classList.add('highlight');
+                }
+
+                row.appendChild(variableCell);
+                row.appendChild(coefCell);
+                row.appendChild(pValueCell);
+                regressionTableBody.appendChild(row);
+            });
+
+            document.getElementById('r2Text').innerText = `R2: ${regressionResult.R2}`;
+        }
+
+        function initialize() {
+            let data = generateData();
+            updateScatterPlots(data);
+            updateRegressionOutput(false, data);
+
+            document.getElementById('includeB').addEventListener('change', function() {
+                if (this.checked) {
+                    document.getElementById('descriptionText').innerText = "With B included, the direct relationship between A and C is less clear...";
+                    updateRegressionOutput(true, data);
+                } else {
+                    document.getElementById('descriptionText').innerText = "Initially, we see the direct relationship between A and C...";
+                    updateRegressionOutput(false, data);
+                }
+            });
+
+            document.getElementById('resetData').addEventListener('click', function() {
+                data = generateData();
+                updateScatterPlots(data);
+                updateRegressionOutput(false, data);
+                document.getElementById('includeB').checked = false;
+                document.getElementById('descriptionText').innerText = "Initially, we see the direct relationship between A and C...";
+            });
+        }
+
+        initialize();
+    </script>
+</body>
+</html>
