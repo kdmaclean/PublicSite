@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Statistical Power Visualizer</title>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    .controls { margin-bottom: 20px; }
+    .controls label { display: inline-block; width: 150px; }
+    canvas { max-width: 100%; }
+  </style>
+</head>
+<body>
+
+<h1>Statistical Power Visualizer</h1>
+
+<div class="controls">
+  <div>
+    <label for="sampleSize">Sample Size (n):</label>
+    <input type="number" id="sampleSize" value="30" min="1" max="1000">
+  </div>
+  <div>
+    <label for="effectSize">Effect Size (Δμ):</label>
+    <input type="number" id="effectSize" value="1" step="0.1">
+  </div>
+  <div>
+    <label for="stdDev">Standard Deviation (σ):</label>
+    <input type="number" id="stdDev" value="5" step="0.1">
+  </div>
+  <div>
+    <label for="alpha">Significance Level (α):</label>
+    <input type="number" id="alpha" value="0.05" step="0.01" min="0.01" max="0.10">
+  </div>
+</div>
+
+<canvas id="chart" width="800" height="400"></canvas>
+
+<!-- Include Chart.js and jStat Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jstat/1.9.4/jstat.min.js"></script>
+<!-- Include the JavaScript file -->
+<script src="app.js"></script>
+
+</body>
+</html>
