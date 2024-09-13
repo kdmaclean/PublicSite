@@ -3,43 +3,64 @@
 document.addEventListener('DOMContentLoaded', () => {
     const sampleSizeInput = document.getElementById('sampleSize');
     const effectSizeInput = document.getElementById('effectSize');
-    const stdDevInput = document.getElementById('stdDev');
-    const alphaInput = document.getElementById('alpha');
-    const canvas = document.getElementById('chart');
-  
+    const sampleSizeValue = document.getElementById('sampleSizeValue');
+    const effectSizeValue = document.getElementById('effectSizeValue');
+    const canvas = document.getElementById('scatterplot');
     let chart;
   
-    function updateChart() {
-      const n = parseFloat(sampleSizeInput.value);
-      const delta = parseFloat(effectSizeInput.value);
-      const sigma = parseFloat(stdDevInput.value);
-      const alpha = parseFloat(alphaInput.value);
-  
-      const se = sigma / Math.sqrt(n);
-      const mu0 = 0;
-      const mu1 = delta;
-  
-      // Critical value under H0
-      const zAlpha = jStat.normal.inv(1 - alpha, 0, 1);
-      const xCrit = mu0 + zAlpha * se;
-  
-      // Power calculation
-      const zBeta = (xCrit - mu1) / se;
-      const beta = jStat.normal.cdf(zBeta, 0, 1);
-      const power = 1 - beta;
-  
-      // Generate data points
-      const xMin = mu0 - 4 * se;
-      const xMax = mu1 + 4 * se;
-      const xValues = [];
-      const yH0Values = [];
-      const yH1Values = [];
-  
-      for (let x = xMin; x <= xMax; x += (xMax - xMin) / 500) {
-        xValues.push(x);
-        yH0Values.push(jStat.normal.pdf(x, mu0, se));
-        yH1Values.push(jStat.normal.pdf(x, mu1, se));
+    function generateData(n, effectSize) {
+      const data = [];
+      for (let i = 0; i < n; i++) {
+        const x = Math.random() * 10;
+        const noise = Math.random() * (1 - effectSize) * 10;
+        const y = effectSize * x + noise;
+        data.push({ x, y });
       }
+      return data;
+    }
+  
+    function updateChart() {
+      const n = parseInt(sampleSizeInput.value);
+      const effectSize = parseFloat(effectSizeInput.value);
+  
+      sampleSizeValue.textContent = n;
+      effectSizeValue.textContent = effectSize.toFixed(2);
+  
+      const data = generateData(n, effectSize);
+  
+      // Extract x and y values
+      const xValues = data.map(point => point.x);
+      const yValues = data.map(point => point.y);
+  
+      // Perform linear regression
+      const sumX = xValues.reduce((a, b) => a + b, 0);
+      const sumY = yValues.reduce((a, b) => a + b, 0);
+      const sumXY = xValues.reduce((sum, x, i) => sum + x * yValues[i], 0);
+      const sumXX = xValues.reduce((sum, x) => sum + x * x, 0);
+  
+      const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+      const intercept = (sumY - slope * sumX) / n;
+  
+      // Calculate p-value (simplified for illustration)
+      const residuals = yValues.map((y, i) => y - (slope * xValues[i] + intercept));
+      const sse = residuals.reduce((sum, r) => sum + r * r, 0);
+      const sst = yValues.reduce((sum, y) => sum + Math.pow(y - sumY / n, 2), 0);
+      const rSquared = 1 - sse / sst;
+  
+      const standardError = Math.sqrt(sse / (n - 2));
+      const seSlope = standardError / Math.sqrt(sumXX - Math.pow(sumX, 2) / n);
+      const tStatistic = slope / seSlope;
+      const degreesOfFreedom = n - 2;
+      const pValue = 2 * (1 - jStat.studentt.cdf(Math.abs(tStatistic), degreesOfFreedom));
+  
+      // Determine significance
+      const significance = pValue < 0.05 ? 'Significant' : 'Not Significant';
+  
+      // Prepare data for plotting
+      const regressionLine = [
+        { x: 0, y: intercept },
+        { x: 10, y: slope * 10 + intercept },
+      ];
   
       // Destroy previous chart if it exists
       if (chart) {
@@ -48,56 +69,68 @@ document.addEventListener('DOMContentLoaded', () => {
   
       // Create new chart
       chart = new Chart(canvas.getContext('2d'), {
-        type: 'line',
+        type: 'scatter',
         data: {
-          labels: xValues,
           datasets: [
             {
-              label: 'Null Hypothesis (H₀)',
-              data: yH0Values,
-              borderColor: 'blue',
-              borderWidth: 1,
-              fill: false,
-              pointRadius: 0,
+              label: 'Data Points',
+              data: data,
+              backgroundColor: 'blue',
             },
             {
-              label: 'Alternative Hypothesis (H₁)',
-              data: yH1Values,
-              borderColor: 'red',
-              borderWidth: 1,
+              label: `Regression Line (${significance})`,
+              type: 'line',
+              data: regressionLine,
+              borderColor: significance === 'Significant' ? 'green' : 'red',
+              borderWidth: 2,
               fill: false,
               pointRadius: 0,
+              tension: 0, // No curve
             },
           ],
         },
         options: {
-          title: {
-            display: true,
-            text: `Statistical Power: ${(power * 100).toFixed(2)}%`,
-          },
           scales: {
-            xAxes: [{
+            x: {
               type: 'linear',
               position: 'bottom',
-              ticks: {
-                min: xMin,
-                max: xMax,
+              title: { display: true, text: 'Independent Variable (X)' },
+              min: 0,
+              max: 10,
+            },
+            y: {
+              title: { display: true, text: 'Dependent Variable (Y)' },
+              min: 0,
+              max: 10,
+            },
+          },
+          plugins: {
+            title: {
+              display: true,
+              text: `Relationship is ${significance} (p = ${pValue.toFixed(3)})`,
+            },
+            tooltip: {
+              callbacks: {
+                label: function (context) {
+                  if (context.dataset.label === 'Data Points') {
+                    const x = context.raw.x.toFixed(2);
+                    const y = context.raw.y.toFixed(2);
+                    return `X: ${x}, Y: ${y}`;
+                  }
+                  return null;
+                },
               },
-            }],
-            yAxes: [{
-              ticks: {
-                beginAtZero: true,
-              },
-            }],
+            },
           },
         },
       });
     }
   
     // Add event listeners to inputs
-    [sampleSizeInput, effectSizeInput, stdDevInput, alphaInput].forEach(input => {
+    [sampleSizeInput, effectSizeInput].forEach(input => {
       input.addEventListener('input', updateChart);
     });
   
     // Initial chart rendering
     updateChart();
+  });
