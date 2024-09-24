@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Scatterplot</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jstat@latest/dist/jstat.min.js"></script>
+    <style>
+        #scatterplot {
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <h1>Interactive Scatterplot</h1>
+    <p>Click anywhere on the plot to add a new point!</p>
+    <div id="scatterplot"></div>
+    <div id="stats"></div>
+    <script>
+        // Set up the SVG
+        const width = 600;
+        const height = 400;
+        const margin = { top: 20, right: 20, bottom: 30, left: 40 };
+
+        const svg = d3.select("#scatterplot")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        const plot = svg.append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        // Set up scales
+        const xScale = d3.scaleLinear()
+            .domain([0, 100])
+            .range([0, width - margin.left - margin.right]);
+
+        const yScale = d3.scaleLinear()
+            .domain([0, 100])
+            .range([height - margin.top - margin.bottom, 0]);
+
+        // Add axes
+        plot.append("g")
+            .attr("transform", `translate(0,${height - margin.top - margin.bottom})`)
+            .call(d3.axisBottom(xScale));
+
+        plot.append("g")
+            .call(d3.axisLeft(yScale));
+
+        // Generate initial random points
+        let data = Array.from({ length: 0 }, () => ({
+            x: Math.random() * 100,
+            y: Math.random() * 100
+        }));
+
+         // Function to calculate regression and update statistics
+         function updateRegression() {
+            // Prepare data for OLS
+            const A = data.map(d => [1,d.x]); // Add a column of ones for the intercept
+            const b = data.map(d => d.y); // Dependent variable
+
+            // Perform OLS regression using jStat
+            const model = jStat.models.ols(b, A);
+
+            // Extract coefficients and statistics
+            const regression = {
+                m: model.coef[1], // Slope
+                b: model.coef[0], // Intercept
+                rSquared: model.R2, // R-squared
+                pValues: model.t.p, // t-test P-values
+                fTestPValue: model.f.pvalue // F-test P-value
+            };
+
+            // Update regression line
+            const regressionLine = plot.selectAll(".regression-line").data([null]);
+            regressionLine.enter()
+                .append("line")
+                .attr("class", "regression-line")
+                .merge(regressionLine)
+                .attr("x1", xScale(0))
+                .attr("y1", yScale(regression.b))
+                .attr("x2", xScale(100))
+                .attr("y2", yScale(regression.m * 100 + regression.b))
+                .attr("stroke", "red")
+                .attr("stroke-width", 2);
+
+            // Update statistics
+            d3.select("#stats").html(`
+                <p><strong>Regression Statistics:</strong></p>
+                <p>Intercept: ${regression.b.toFixed(2)}</p>
+                <p>Coefficient (slope): ${regression.m.toFixed(2)}</p>
+                <p>R-squared: ${regression.rSquared.toFixed(2)}</p>
+                <p>p-value: ${regression.pValues[1].toFixed(2)}</p>
+            `);
+        }
+
+        // Function to update the plot
+        function updatePlot() {
+            const points = plot.selectAll("circle")
+                .data(data);
+
+            points.enter()
+                .append("circle")
+                .attr("cx", d => xScale(d.x))
+                .attr("cy", d => yScale(d.y))
+                .attr("r", 5)
+                .attr("fill", "steelblue");
+
+            points
+                .attr("cx", d => xScale(d.x))
+                .attr("cy", d => yScale(d.y));
+
+            points.exit().remove();
+
+            updateRegression();
+        }
+
+        // Add click event to add new points
+        svg.on("click", function(event) {
+            const [x, y] = d3.pointer(event);
+            const newX = xScale.invert(x - margin.left);
+            const newY = yScale.invert(y - margin.top);
+            
+            if (newX >= 0 && newX <= 100 && newY >= 0 && newY <= 100) {
+                data.push({ x: newX, y: newY });
+                updatePlot();
+            }
+        });
+
+        // Initial plot and regression
+        updatePlot();
+    </script>
+</body>
+</html>
