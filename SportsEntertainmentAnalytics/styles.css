@@ -1,0 +1,169 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f4f7;
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    max-width: 800px;
+    margin: auto;
+    text-align: center;
+}
+
+h1 {
+    color: #2c3e50;
+}
+
+.controls {
+    margin: 20px 0;
+}
+
+label {
+    font-size: 1.2em;
+    margin-right: 10px;
+}
+
+input[type="number"] {
+    width: 60px;
+    padding: 5px;
+    font-size: 1em;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 1em;
+    margin-left: 10px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #2980b9;
+}
+
+.animation-area {
+    position: relative;
+    height: 100px;
+    margin: 20px 0;
+}
+
+.spinner {
+    border: 8px solid #f3f3f3;
+    border-top: 8px solid #3498db;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 2s linear infinite;
+    margin: 20px auto;
+    display: none;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.chart-container {
+    position: relative;
+    height: 400px;
+    width: 100%;
+}
+
+@media (max-width: 600px) {
+    .chart-container {
+        height: 300px;
+    }
+
+    button {
+        width: 100%;
+        margin-top: 10px;
+    }
+}
+
+.simulation-type {
+    margin: 20px 0;
+}
+
+.simulation-type button {
+    margin: 0 10px;
+}
+
+.season-visualization {
+    display: none;
+    margin: 20px auto;
+    max-width: 800px;
+}
+
+.game-grid {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 5px;
+    margin: 20px 0;
+}
+
+.game-cell {
+    aspect-ratio: 1;
+    border: 1px solid #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.game-cell.active {
+    background-color: #3498db;
+    color: white;
+}
+
+.game-cell.no-goal {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.current-streak, .longest-streak {
+    font-size: 1.2em;
+    margin: 10px 0;
+    font-weight: bold;
+}
+
+.current-streak {
+    color: #3498db;
+}
+
+.longest-streak {
+    color: #2ecc71;
+}
+
+.stats-container {
+    margin: 20px auto;
+    max-width: 600px;
+}
+
+.summary-stats {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: #f8f9fa;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.summary-stats th,
+.summary-stats td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.summary-stats th {
+    background-color: #e9ecef;
+    font-weight: bold;
+}
+
+.summary-stats tr:hover {
+    background-color: #f2f2f2;
+}

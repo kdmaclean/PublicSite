@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hockey Goalless Streak Simulator</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Hockey Goalless Streak Simulator</h1>
+        <div class="controls">
+            <label for="goalRate">Goals per Game Rate:</label>
+            <input type="number" id="goalRate" value="0.5" step="0.1" min="0" max="5">
+            <span id="perSeasonRate">or 41 goals per 82 games</span>
+            <div class="simulation-type">
+                <button id="singleSeasonButton">Simulate One Season</button>
+                <button id="multiSeasonButton">Simulate 1000 Seasons</button>
+            </div>
+        </div>
+        <div class="season-visualization" id="seasonVisualization">
+            <div class="game-grid" id="gameGrid"></div>
+            <div class="current-streak" id="currentStreak">Current Streak: 0</div>
+            <div class="longest-streak" id="longestStreak">Longest Streak: 0</div>
+            <div class="total-goals" id="totalGoals">Total Goals: 0</div>
+        </div>
+        <div class="animation-area" id="animationArea">
+            <!-- Animation will be rendered here -->
+            <div class="spinner" id="spinner"></div>
+        </div>
+        <div class="chart-container">
+            <canvas id="streakChart"></canvas>
+        </div>
+        <div class="stats-container">
+            <table class="summary-stats">
+                <thead>
+                    <tr>
+                        <th>Statistic</th>
+                        <th>Longest Goalless Streak</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Average</td>
+                        <td id="avgStreak">-</td>
+                    </tr>
+                    <tr>
+                        <td>5th Percentile</td>
+                        <td id="p5Streak">-</td>
+                    </tr>
+                    <tr>
+                        <td>95th Percentile</td>
+                        <td id="p95Streak">-</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
