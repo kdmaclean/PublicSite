@@ -1,228 +1,200 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const singleSimButton = document.getElementById('singleSimButton');
-    const multiSimButton = document.getElementById('multiSimButton');
-    const timeline = document.getElementById('timeline');
-    const gameVisualization = document.getElementById('gameVisualization');
-    const ctx = document.getElementById('resultsChart').getContext('2d');
-    let resultsChart;
+    const newPilotBtn = document.getElementById('newPilot');
+    const renewShowBtn = document.getElementById('renewShow');
+    const resetGameBtn = document.getElementById('resetGame');
+    console.log('Reset button found:', resetGameBtn);
+    const ctx = document.getElementById('ratingsChart').getContext('2d');
+    
+    let gameState = {
+        year: 1,
+        currentShow: null,
+        currentShowAge: 0,
+        ratings: [],
+        showHistory: [],
+        ratingsChart: null,
+        newShowYears: new Set()
+    };
 
-    const TOTAL_SECONDS = 600; // 10 minutes
-    const INTERVAL = 5; // 5 second intervals
-    const TOTAL_INTERVALS = TOTAL_SECONDS / INTERVAL;
+    const RATING_PARAMS = {
+        gamma: {
+            shape: 0.65,    // Less than 1 gives us the power law-like shape
+            scale: 6.0      // Scales it to fill our 0-10 range appropriately
+        }
+    };
 
-    function initializeTimeline() {
-        timeline.innerHTML = '';
-        for (let i = 0; i < TOTAL_INTERVALS; i++) {
-            const cell = document.createElement('div');
-            cell.className = 'time-cell';
-            timeline.appendChild(cell);
+    function generateGamma(shape, scale) {
+        // Marsaglia and Tsang's method
+        let d = shape - 1/3;
+        let c = 1/Math.sqrt(9*d);
+        while(true) {
+            let x = 0;
+            let v = 0;
+            do {
+                x = Math.random()*2-1;
+                v = 1 + c*x;
+            } while(v <= 0);
+            
+            v = v*v*v;
+            let u = Math.random();
+            
+            if(u < 1 - 0.331*(x*x)*(x*x)) return scale*d*v;
+            if(Math.log(u) < 0.5*x*x + d*(1 - v + Math.log(v))) return scale*d*v;
         }
     }
 
-    function formatTime(seconds) {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
-    }
-
-    async function simulateSingleGame(params) {
-        gameVisualization.style.display = 'block';
-        document.querySelector('.chart-container').style.display = 'none';
-        initializeTimeline();
+    function generatePilotHistogram() {
+        const histogramCtx = document.getElementById('pilotHistogram').getContext('2d');
+        const sampleSize = 1000;
+        const binCount = 20;
+        const samples = [];
         
-        const cells = document.querySelectorAll('.time-cell');
-        let ourScore = 0;
-        let theirScore = 1; // Start down by 1
-        let timeRemaining = TOTAL_SECONDS;
-        let isGoaliePulled = false;
-
-        // Update initial score display
-        document.getElementById('scoreDisplay').textContent = `Score: ${ourScore} - ${theirScore}`;
-
-        for (let i = 0; i < TOTAL_INTERVALS; i++) {
-            timeRemaining = TOTAL_SECONDS - (i * INTERVAL);
-            
-            // Only pull when down by 1 or 2 goals
-            const goalDiff = theirScore - ourScore;
-            isGoaliePulled = (timeRemaining <= params.pullTimeSeconds && goalDiff > 0 && goalDiff <= 2);
-            
-            // Calculate event probabilities for this interval
-            const ourRate = isGoaliePulled ? params.ourPulledRate : params.ourNormalRate;
-            const theirRate = isGoaliePulled ? params.theirPulledRate : params.theirNormalRate;
-            
-            // Convert per-minute rates to per-interval probabilities
-            const ourProb = ourRate * (INTERVAL / 60);
-            const theirProb = theirRate * (INTERVAL / 60);
-            
-            // Simulate interval
-            const random = Math.random();
-            let event = 'none';
-            
-            if (random < ourProb) {
-                event = 'our-goal';
-                ourScore++;
-            } else if (random < ourProb + theirProb) {
-                event = 'their-goal';
-                theirScore++;
-            }
-            
-            // Animate cell
-            await new Promise(resolve => setTimeout(resolve, 50));
-            cells[i].classList.add(event);
-            
-            // Update displays with corrected time
-            document.getElementById('gameTime').textContent = 
-                `Time Remaining: ${formatTime(Math.max(0, timeRemaining - INTERVAL))}`;
-            document.getElementById('scoreDisplay').textContent = `Score: ${ourScore} - ${theirScore}`;
-            document.getElementById('goalieStatus').textContent = `Goalie: ${isGoaliePulled ? 'Pulled' : 'In Net'}`;
+        // Generate samples
+        for (let i = 0; i < sampleSize; i++) {
+            const rating = Math.min(10, generateGamma(RATING_PARAMS.gamma.shape, RATING_PARAMS.gamma.scale));
+            samples.push(rating);
         }
-        
-        // Add result message after simulation
-        const resultMessage = document.createElement('div');
-        resultMessage.className = 'result-message';
-        if (ourScore > theirScore) {
-            resultMessage.textContent = 'We win! 🎉';
-            resultMessage.style.color = '#2ecc71';
-        } else if (ourScore < theirScore) {
-            resultMessage.textContent = 'We lose 😢';
-            resultMessage.style.color = '#e74c3c';
-        } else {
-            resultMessage.textContent = 'It\'s a tie! 🤝';
-            resultMessage.style.color = '#3498db';
-        }
-        document.getElementById('gameVisualization').appendChild(resultMessage);
-        
-        return { ourScore, theirScore };
-    }
 
-    async function simulateMultipleGames(params) {
-        gameVisualization.style.display = 'none';
-        document.querySelector('.chart-container').style.display = 'block';
-        
-        const results = [];
-        for (let i = 0; i < 1000; i++) {
-            let ourScore = 0;
-            let theirScore = 1;
-            let timeRemaining = TOTAL_SECONDS;
-            
-            for (let t = 0; t < TOTAL_INTERVALS; t++) {
-                timeRemaining = TOTAL_SECONDS - (t * INTERVAL);
-                const goalDiff = theirScore - ourScore;
-                const isGoaliePulled = (timeRemaining <= params.pullTimeSeconds && goalDiff > 0 && goalDiff <= 2);
-                
-                const ourRate = isGoaliePulled ? params.ourPulledRate : params.ourNormalRate;
-                const theirRate = isGoaliePulled ? params.theirPulledRate : params.theirNormalRate;
-                
-                const ourProb = ourRate * (INTERVAL / 60);
-                const theirProb = theirRate * (INTERVAL / 60);
-                
-                const random = Math.random();
-                if (random < ourProb) {
-                    ourScore++;
-                } else if (random < ourProb + theirProb) {
-                    theirScore++;
-                }
-            }
-            
-            results.push({ ourScore, theirScore });
-        }
-        
-        updateStats(results);
-        renderChart(results);
-    }
+        // Calculate statistics
+        const mean = samples.reduce((a, b) => a + b, 0) / sampleSize;
+        const variance = samples.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / sampleSize;
+        const stdDev = Math.sqrt(variance);
 
-    function updateStats(results) {
-        const total = results.length;
-        const wins = results.filter(r => r.ourScore > r.theirScore).length;
-        const ties = results.filter(r => r.ourScore === r.theirScore).length;
-        const losses = results.filter(r => r.ourScore < r.theirScore).length;
+        // Update stats display
+        const statsDiv = document.getElementById('pilotStats');
+        statsDiv.innerHTML = `
+            <p><strong>Average Rating:</strong> ${mean.toFixed(2)}</p>
+            <p><strong>Standard Deviation:</strong> ${stdDev.toFixed(2)}</p>
+        `;
         
-        document.getElementById('winRate').textContent = 
-            `${wins} (${((wins/total) * 100).toFixed(1)}%)`;
-        document.getElementById('tieRate').textContent = 
-            `${ties} (${((ties/total) * 100).toFixed(1)}%)`;
-        document.getElementById('lossRate').textContent = 
-            `${losses} (${((losses/total) * 100).toFixed(1)}%)`;
-    }
-
-    function renderChart(results) {
-        // Create score differential distribution with grouping
-        const diffs = results.map(r => r.ourScore - r.theirScore);
-        const counts = {
-            "≤-3": 0,
-            "-2": 0,
-            "-1": 0,
-            "0": 0,
-            "+1": 0,
-            "+2": 0,
-            "≥+3": 0
-        };
-        
-        diffs.forEach(d => {
-            if (d <= -3) counts["≤-3"]++;
-            else if (d >= 3) counts["≥+3"]++;
-            else if (d === -2) counts["-2"]++;
-            else if (d === -1) counts["-1"]++;
-            else if (d === 0) counts["0"]++;
-            else if (d === 1) counts["+1"]++;
-            else if (d === 2) counts["+2"]++;
-        });
-        
-        const labels = ["≤-3", "-2", "-1", "0", "+1", "+2", "≥+3"];
-        const data = labels.map(l => counts[l]);
-        const colors = labels.map(l => {
-            if (l.includes('-')) return 'rgba(231, 76, 60, 0.6)';  // Red for losses
-            else if (l === '0') return 'rgba(52, 152, 219, 0.6)';  // Blue for ties
-            else return 'rgba(46, 204, 113, 0.6)';  // Green for wins
-        });
-        const borderColors = labels.map(l => {
-            if (l.includes('-')) return 'rgba(192, 57, 43, 1)';    // Darker red
-            else if (l === '0') return 'rgba(41, 128, 185, 1)';    // Darker blue
-            else return 'rgba(39, 174, 96, 1)';    // Darker green
+        // Create bins
+        const bins = Array(binCount).fill(0);
+        samples.forEach(sample => {
+            const binIndex = Math.min(Math.floor(sample * (binCount/10)), binCount-1);
+            bins[binIndex]++;
         });
 
-        if (resultsChart) {
-            resultsChart.destroy();
-        }
+        // Convert to percentages
+        const binPercentages = bins.map(count => (count / sampleSize) * 100);
 
-        resultsChart = new Chart(ctx, {
+        // Create labels for bin ranges
+        const labels = bins.map((_, index) => {
+            const start = (index * (10/binCount)).toFixed(1);
+            const end = ((index + 1) * (10/binCount)).toFixed(1);
+            return `${start}-${end}`;
+        });
+
+        new Chart(histogramCtx, {
             type: 'bar',
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Goal Differential Distribution',
-                    data: data,
-                    backgroundColor: colors,
-                    borderColor: borderColors,
+                    label: 'Percentage of Pilots',
+                    data: binPercentages,
+                    backgroundColor: 'rgba(52, 152, 219, 0.6)',
+                    borderColor: 'rgba(41, 128, 185, 1)',
                     borderWidth: 1
                 }]
             },
             options: {
                 responsive: true,
                 scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Percentage of Pilots'
+                        }
+                    },
                     x: {
                         title: {
                             display: true,
-                            text: 'Goal Differential (Our Goals - Their Goals)'
+                            text: 'Rating Range'
                         }
-                    },
-                    y: {
-                        title: {
-                            display: true,
-                            text: 'Frequency'
-                        },
-                        beginAtZero: true
                     }
                 },
                 plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.dataset.label || '';
-                                const value = context.parsed.y || 0;
-                                const percentage = ((value / results.length) * 100).toFixed(1);
-                                return `${label}: ${value} (${percentage}%)`;
-                            }
+                    title: {
+                        display: true,
+                        text: 'Distribution of Pilot Episode Ratings'
+                    }
+                }
+            }
+        });
+    }
+
+    function generateShowName() {
+        const adjectives = ['Amazing', 'Dramatic', 'Funny', 'Dark', 'Wild', 'Sweet', 'Criminal', 'Mysterious', 'Brilliant', 'Gripping', 'Intense', 'Thrilling', 'Charming', 'Exciting', 'Intriguing', 'Suspenseful', 'Captivating', 'Engaging', 'Compelling', 'Fascinating'];
+        const nouns = [
+            'Hospital', 'Precinct', 'Academy', 'Kitchen', 'Restaurant', 'Courthouse', 'Laboratory', 
+            'Agency', 'Office', 'School', 'University', 'Station', 'Factory', 'Hotel', 'Casino',
+            'Manor', 'Estate', 'Palace', 'Castle', 'Island', 'Mountain', 'Valley', 'Village',
+            'Mansion', 'Diner', 'Cafe', 'Theater', 'Studio', 'Gallery', 'Museum', 'Library',
+            'Warehouse', 'Workshop', 'Garden', 'Farm', 'Ranch', 'Zoo', 'Sanctuary', 'Clinic',
+            'Chapel', 'Temple', 'Cathedral', 'Tower', 'Plaza', 'Market', 'Mall', 'Arena',
+            'Stadium', 'Harbor', 'Port', 'Airport', 'Subway', 'Bridge', 'Tunnel'
+        ];
+        return `${adjectives[Math.floor(Math.random() * adjectives.length)]} ${
+            nouns[Math.floor(Math.random() * nouns.length)]}`;
+    }
+
+    function generateRating(isNew, previousRating = null) {
+        if (isNew) {
+            // Generate gamma-distributed rating and cap it at 10
+            const rating = generateGamma(RATING_PARAMS.gamma.shape, RATING_PARAMS.gamma.scale);
+            return Math.min(10, rating);
+        } else {
+            // Existing shows tend to decline but with some variance
+            const decline = Math.random() * 0.5; // 0-0.5 decline
+            const variance = (Math.random() - 0.5) * 2; // -1 to 1 variance
+            return Math.max(0, Math.min(10, previousRating - decline + variance));
+        }
+    }
+
+    function updateChart() {
+        if (gameState.ratingsChart) {
+            gameState.ratingsChart.destroy();
+        }
+
+        // Create array of points where new shows started
+        const newShowPoints = gameState.ratings.map((rating, index) => {
+            return gameState.newShowYears.has(index + 1) ? rating : null;
+        });
+
+        gameState.ratingsChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: gameState.ratings.length}, (_, i) => `${i + 1}`),
+                datasets: [{
+                    label: 'Ratings',
+                    data: gameState.ratings,
+                    borderColor: '#3498db',
+                    tension: 0.1
+                }, {
+                    label: 'New Show',
+                    data: newShowPoints,
+                    pointStyle: 'star',
+                    pointRadius: 10,
+                    pointHoverRadius: 12,
+                    backgroundColor: '#e74c3c',
+                    borderColor: '#e74c3c',
+                    showLine: false
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 10,
+                        title: {
+                            display: true,
+                            text: 'Rating'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Year'
                         }
                     }
                 }
@@ -230,45 +202,145 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function getParams() {
-        return {
-            ourNormalRate: parseFloat(document.getElementById('ourNormalRate').value),
-            ourPulledRate: parseFloat(document.getElementById('ourPulledRate').value),
-            theirNormalRate: parseFloat(document.getElementById('theirNormalRate').value),
-            theirPulledRate: parseFloat(document.getElementById('theirPulledRate').value),
-            pullTimeSeconds: parseFloat(document.getElementById('pullTime').value) * 60
-        };
+    function updateStats() {
+        const totalRating = gameState.ratings.reduce((a, b) => a + b, 0);
+        const avgRating = gameState.ratings.length > 0 ? totalRating / gameState.ratings.length : 0;
+        
+        document.getElementById('avgRating').textContent = gameState.ratings.length > 0 ? avgRating.toFixed(1) : '-';
+        document.getElementById('totalRating').textContent = gameState.ratings.length > 0 ? totalRating.toFixed(1) : '-';
+        document.getElementById('totalShows').textContent = gameState.showHistory.length + (gameState.currentShow ? 1 : 0);
+        
+        // Include current show in longest show calculation
+        let allShows = [...gameState.showHistory];
+        if (gameState.currentShow) {
+            allShows.push({
+                name: gameState.currentShow,
+                seasons: gameState.currentShowAge
+            });
+        }
+        
+        const longestShow = allShows.length > 0 ? 
+            Math.max(...allShows.map(show => show.seasons)) : 0;
+        document.getElementById('longestShow').textContent = longestShow > 0 ? `${longestShow} seasons` : '-';
     }
 
-    // Event Listeners
-    singleSimButton.addEventListener('click', () => {
-        const params = getParams();
-        if (isNaN(params.ourNormalRate) || params.ourNormalRate < 0) {
-            alert('Please enter valid goal rates.');
+    function updateDisplay() {
+        document.getElementById('currentYear').textContent = `${gameState.year} / 20`;
+        document.getElementById('currentShow').textContent = gameState.currentShow || 'None';
+        document.getElementById('ratings').textContent = 
+            gameState.ratings.length > 0 ? 
+            gameState.ratings[gameState.ratings.length - 1].toFixed(1) : '-';
+    }
+
+    function endTurn(rating) {
+        gameState.ratings.push(rating);
+        updateChart();
+        updateStats();
+        updateDisplay();
+        
+        if (gameState.year === 20) {
+            endGame();
             return;
         }
-        singleSimButton.disabled = true;
-        multiSimButton.disabled = true;
         
-        // Remove any existing result message
-        const existingResult = document.querySelector('.result-message');
-        if (existingResult) {
-            existingResult.remove();
+        gameState.year++;
+        renewShowBtn.disabled = false;
+        newPilotBtn.disabled = false;
+    }
+
+    function endGame() {
+        newPilotBtn.disabled = true;
+        renewShowBtn.disabled = true;
+        const totalRating = gameState.ratings.reduce((a, b) => a + b, 0);
+        alert(`Game Over!\nFinal Average Rating: ${
+            (totalRating / gameState.ratings.length).toFixed(1)}\nTotal Rating: ${
+            totalRating.toFixed(1)}`);
+    }
+
+    function resetGame() {
+        // Destroy existing chart if it exists
+        if (gameState.ratingsChart) {
+            gameState.ratingsChart.destroy();
+        }
+
+        // Reset game state
+        gameState = {
+            year: 1,
+            currentShow: null,
+            currentShowAge: 0,
+            ratings: [],
+            showHistory: [],
+            ratingsChart: null,
+            newShowYears: new Set()
+        };
+
+        // Reset UI
+        newPilotBtn.disabled = false;
+        renewShowBtn.disabled = true;
+        
+        // Update displays
+        updateDisplay();
+        updateChart();  // This will create a fresh chart
+        updateStats();
+    }
+
+    newPilotBtn.addEventListener('click', () => {
+        if (gameState.currentShow) {
+            gameState.showHistory.push({
+                name: gameState.currentShow,
+                seasons: gameState.currentShowAge
+            });
         }
         
-        simulateSingleGame(params).then(() => {
-            singleSimButton.disabled = false;
-            multiSimButton.disabled = false;
-        });
+        gameState.currentShow = generateShowName();
+        gameState.currentShowAge = 1;
+        gameState.newShowYears.add(gameState.year);
+        const rating = generateRating(true);
+        
+        newPilotBtn.disabled = true;
+        renewShowBtn.disabled = true;
+        
+        endTurn(rating);
     });
 
-    multiSimButton.addEventListener('click', () => {
-        const params = getParams();
-        singleSimButton.disabled = true;
-        multiSimButton.disabled = true;
-        simulateMultipleGames(params).then(() => {
-            singleSimButton.disabled = false;
-            multiSimButton.disabled = false;
+    renewShowBtn.addEventListener('click', () => {
+        gameState.currentShowAge++;
+        const lastRating = gameState.ratings[gameState.ratings.length - 1];
+        const rating = generateRating(false, lastRating);
+        
+        newPilotBtn.disabled = true;
+        renewShowBtn.disabled = true;
+        
+        endTurn(rating);
+    });
+
+    resetGameBtn.addEventListener('click', () => {
+        resetGame();
+    });
+
+    // Initialize game
+    updateDisplay();
+    updateChart();
+
+    // Add this at the start of the existing DOMContentLoaded callback
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            // Remove active class from all buttons and hide all contents
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabContents.forEach(content => content.style.display = 'none');
+
+            // Add active class to clicked button and show corresponding content
+            button.classList.add('active');
+            const tabId = button.getAttribute('data-tab');
+            document.getElementById(`${tabId}-tab`).style.display = 'block';
+            
+            // Generate histogram when info tab is selected
+            if (tabId === 'info') {
+                generatePilotHistogram();
+            }
         });
     });
 });

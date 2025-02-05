@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ELO Battle Royale Simulator</title>
+  <style>
+    /* Basic styling */
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    #competitors {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .competitor {
+      display: inline-block;
+      width: 150px;
+      text-align: center;
+      margin: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 10px;
+      background: #eee;
+    }
+    .match-area {
+      text-align: center;
+      margin: 20px 0;
+    }
+    .button {
+      background: #007bff;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .leaderboard {
+      margin-top: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    table, th, td {
+      border: 1px solid #ddd;
+    }
+    th, td {
+      padding: 8px;
+      text-align: center;
+    }
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 10;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.4);
+    }
+    .modal-content {
+      background: #fff;
+      margin: 10% auto;
+      padding: 20px;
+      width: 50%;
+      border-radius: 8px;
+    }
+    .close {
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>ELO Battle Royale Simulator</h1>
+  
+  <!-- Competitor Cards -->
+  <div id="competitors">
+    <div class="competitor" data-id="1">
+      <h3>Player 1</h3>
+      <p>Rating: <span class="rating">1500</span></p>
+    </div>
+    <div class="competitor" data-id="2">
+      <h3>Player 2</h3>
+      <p>Rating: <span class="rating">1500</span></p>
+    </div>
+    <div class="competitor" data-id="3">
+      <h3>Player 3</h3>
+      <p>Rating: <span class="rating">1500</span></p>
+    </div>
+    <div class="competitor" data-id="4">
+      <h3>Player 4</h3>
+      <p>Rating: <span class="rating">1500</span></p>
+    </div>
+  </div>
+
+  <!-- Match Simulation Control -->
+  <div class="match-area">
+    <button id="simulateMatch" class="button">Simulate Next Match</button>
+  </div>
+
+  <!-- Leaderboard -->
+  <div class="leaderboard">
+    <h2>Leaderboard</h2>
+    <table id="leaderboardTable">
+      <thead>
+        <tr>
+          <th>Player</th>
+          <th>Rating</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Filled dynamically -->
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal for ELO update explanation -->
+<div id="modal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h2>ELO Update Breakdown</h2>
+    <p id="updateDetails"></p>
+  </div>
+</div>
+
+<script>
+  // Initialize competitor data
+  let competitors = [
+    { id: 1, name: 'Player 1', rating: 1500 },
+    { id: 2, name: 'Player 2', rating: 1500 },
+    { id: 3, name: 'Player 3', rating: 1500 },
+    { id: 4, name: 'Player 4', rating: 1500 }
+  ];
+
+  // Define scheduled matches (bracket-style)
+  let currentMatchIndex = 0;
+  let matches = [
+    { p1: 1, p2: 2 },
+    { p1: 3, p2: 4 }
+    // In a fuller implementation, winners would face off next.
+  ];
+
+  // Update competitor cards with current ratings
+  function updateCompetitorCards() {
+    document.querySelectorAll('.competitor').forEach(card => {
+      let id = parseInt(card.getAttribute('data-id'));
+      let comp = competitors.find(c => c.id === id);
+      card.querySelector('.rating').textContent = Math.round(comp.rating);
+    });
+  }
+
+  // Update leaderboard table (sorted by rating)
+  function updateLeaderboard() {
+    let tbody = document.querySelector('#leaderboardTable tbody');
+    tbody.innerHTML = '';
+    let sorted = competitors.slice().sort((a, b) => b.rating - a.rating);
+    sorted.forEach(comp => {
+      let tr = document.createElement('tr');
+      let tdName = document.createElement('td');
+      tdName.textContent = comp.name;
+      let tdRating = document.createElement('td');
+      tdRating.textContent = Math.round(comp.rating);
+      tr.appendChild(tdName);
+      tr.appendChild(tdRating);
+      tbody.appendChild(tr);
+    });
+  }
+
+  // ELO update function using the standard formula:
+  // newRating = currentRating + K * (Actual Score - Expected Score)
+  function updateElo(ratingA, ratingB, scoreA, k = 32) {
+    let expectedA = 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400));
+    let expectedB = 1 / (1 + Math.pow(10, (ratingA - ratingB) / 400));
+    let newRatingA = ratingA + k * (scoreA - expectedA);
+    let newRatingB = ratingB + k * ((1 - scoreA) - expectedB);
+    return {
+      newRatingA,
+      newRatingB,
+      expectedA,
+      expectedB,
+      ratingAChange: k * (scoreA - expectedA),
+      ratingBChange: k * ((1 - scoreA) - expectedB)
+    };
+  }
+
+  // Simulate a match between two competitors defined in a match object
+  function simulateMatch(match) {
+    let compA = competitors.find(c => c.id === match.p1);
+    let compB = competitors.find(c => c.id === match.p2);
+
+    // Determine expected score for Player A
+    let expectedA = 1 / (1 + Math.pow(10, (compB.rating - compA.rating) / 400));
+
+    // Use a random number to decide the winner based on the expected probability
+    let outcome = Math.random();
+    let scoreA;
+    if (outcome < expectedA) {
+      // Player A wins
+      scoreA = 1;
+    } else {
+      // Player A loses
+      scoreA = 0;
+    }
+
+    let k = 32; // K-factor
+    let results = updateElo(compA.rating, compB.rating, scoreA, k);
+
+    // Update the ratings in the competitor array
+    compA.rating = results.newRatingA;
+    compB.rating = results.newRatingB;
+
+    // Prepare detailed explanation for the modal
+    let details = `
+      <strong>${compA.name} vs ${compB.name}</strong><br><br>
+      <em>${compA.name}</em>:<br>
+      Pre-Match Rating: ${compA.rating.toFixed(2)}<br>
+      Expected Score: ${results.expectedA.toFixed(2)}<br>
+      Rating Change: ${results.ratingAChange.toFixed(2)}<br>
+      New Rating: ${results.newRatingA.toFixed(2)}<br><br>
+      <em>${compB.name}</em>:<br>
+      Pre-Match Rating: ${compB.rating.toFixed(2)}<br>
+      Expected Score: ${results.expectedB.toFixed(2)}<br>
+      Rating Change: ${results.ratingBChange.toFixed(2)}<br>
+      New Rating: ${results.newRatingB.toFixed(2)}
+    `;
+    showModal(details);
+  }
+
+  // Modal functionality
+  let modal = document.getElementById("modal");
+  let spanClose = document.querySelector(".close");
+  function showModal(content) {
+    document.getElementById("updateDetails").innerHTML = content;
+    modal.style.display = "block";
+  }
+  spanClose.onclick = function() {
+    modal.style.display = "none";
+  }
+  window.onclick = function(event) {
+    if (event.target == modal) {
+      modal.style.display = "none";
+    }
+  }
+
+  // Handle the "Simulate Next Match" button click
+  document.getElementById('simulateMatch').addEventListener('click', function() {
+    if (currentMatchIndex < matches.length) {
+      let match = matches[currentMatchIndex];
+      simulateMatch(match);
+      currentMatchIndex++;
+      updateCompetitorCards();
+      updateLeaderboard();
+    } else {
+      alert("All scheduled matches have been simulated.");
+    }
+  });
+
+  // Initialize leaderboard on page load
+  updateLeaderboard();
+</script>
+</body>
+</html>
