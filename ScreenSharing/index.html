@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Screen Sharing</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        #video-container {
+            margin-top: 20px;
+        }
+
+        #screen-video {
+            width: 100%;
+            max-width: 1000px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <h1>Screen Sharing</h1>
+    <button id="startBtn">Start Sharing</button>
+    <button id="stopBtn" disabled>Stop Sharing</button>
+    
+    <div id="video-container">
+        <video id="screen-video" autoplay playsinline></video>
+    </div>
+
+    <script>
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const videoElement = document.getElementById('screen-video');
+        let screenStream = null;
+
+        startBtn.addEventListener('click', async () => {
+            try {
+                screenStream = await navigator.mediaDevices.getDisplayMedia({
+                    video: true,
+                    audio: true
+                });
+                
+                videoElement.srcObject = screenStream;
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+
+                // Handle stream ending (user clicks "Stop sharing" in browser UI)
+                screenStream.getVideoTracks()[0].addEventListener('ended', () => {
+                    stopSharing();
+                });
+            } catch (err) {
+                console.error('Error sharing screen:', err);
+                alert('Error sharing screen. Please make sure you have granted permission.');
+            }
+        });
+
+        stopBtn.addEventListener('click', stopSharing);
+
+        function stopSharing() {
+            if (screenStream) {
+                screenStream.getTracks().forEach(track => track.stop());
+                videoElement.srcObject = null;
+                screenStream = null;
+            }
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+        }
+    </script>
+</body>
+</html>
