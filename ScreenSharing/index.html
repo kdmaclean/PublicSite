@@ -42,12 +42,54 @@
             background-color: #cccccc;
             cursor: not-allowed;
         }
+
+        #connection-panel {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        #sharing-code {
+            font-family: monospace;
+            padding: 10px;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 10px 0;
+            word-break: break-all;
+        }
+
+        #viewer-panel {
+            margin-top: 20px;
+        }
+
+        input[type="text"] {
+            padding: 8px;
+            font-size: 16px;
+            width: 300px;
+            margin-right: 10px;
+        }
     </style>
 </head>
 <body>
     <h1>Screen Sharing</h1>
-    <button id="startBtn">Start Sharing</button>
-    <button id="stopBtn" disabled>Stop Sharing</button>
+    
+    <div id="host-controls">
+        <button id="startBtn">Start Sharing</button>
+        <button id="stopBtn" disabled>Stop Sharing</button>
+        
+        <div id="connection-panel" style="display: none;">
+            <h3>Share this code with viewers:</h3>
+            <div id="sharing-code"></div>
+        </div>
+    </div>
+
+    <div id="viewer-panel">
+        <h3>Join as viewer</h3>
+        <input type="text" id="connect-code" placeholder="Enter sharing code">
+        <button id="connectBtn">Connect</button>
+    </div>
     
     <div id="video-container">
         <video id="screen-video" autoplay playsinline></video>
@@ -57,7 +99,21 @@
         const startBtn = document.getElementById('startBtn');
         const stopBtn = document.getElementById('stopBtn');
         const videoElement = document.getElementById('screen-video');
+        const connectionPanel = document.getElementById('connection-panel');
+        const sharingCode = document.getElementById('sharing-code');
+        const connectCode = document.getElementById('connect-code');
+        const connectBtn = document.getElementById('connectBtn');
+        
         let screenStream = null;
+        let peerConnection = null;
+        
+        // ICE server configuration for NAT traversal
+        const configuration = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        };
 
         startBtn.addEventListener('click', async () => {
             try {
@@ -70,13 +126,75 @@
                 startBtn.disabled = true;
                 stopBtn.disabled = false;
 
-                // Handle stream ending (user clicks "Stop sharing" in browser UI)
-                screenStream.getVideoTracks()[0].addEventListener('ended', () => {
+                // Create and display sharing code
+                createPeerConnection();
+                
+                screenStream.getTracks()[0].addEventListener('ended', () => {
                     stopSharing();
                 });
             } catch (err) {
                 console.error('Error sharing screen:', err);
                 alert('Error sharing screen. Please make sure you have granted permission.');
+            }
+        });
+
+        async function createPeerConnection() {
+            peerConnection = new RTCPeerConnection(configuration);
+            
+            // Add screen stream to peer connection
+            screenStream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, screenStream);
+            });
+
+            // Create offer
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+
+            // Generate sharing code (simplified version using base64)
+            const code = btoa(JSON.stringify(peerConnection.localDescription));
+            sharingCode.textContent = code;
+            connectionPanel.style.display = 'block';
+
+            // Handle ICE candidates
+            peerConnection.onicecandidate = event => {
+                if (event.candidate) {
+                    const newCode = btoa(JSON.stringify({
+                        sdp: peerConnection.localDescription,
+                        ice: event.candidate
+                    }));
+                    sharingCode.textContent = newCode;
+                }
+            };
+        }
+
+        connectBtn.addEventListener('click', async () => {
+            try {
+                const code = connectCode.value;
+                const { sdp, ice } = JSON.parse(atob(code));
+                
+                peerConnection = new RTCPeerConnection(configuration);
+                
+                // Handle incoming stream
+                peerConnection.ontrack = event => {
+                    videoElement.srcObject = event.streams[0];
+                };
+
+                // Set remote description
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
+                
+                // Create and send answer
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+
+                if (ice) {
+                    await peerConnection.addIceCandidate(new RTCIceCandidate(ice));
+                }
+                
+                connectBtn.disabled = true;
+                connectCode.disabled = true;
+            } catch (err) {
+                console.error('Error connecting:', err);
+                alert('Invalid sharing code or connection error');
             }
         });
 
@@ -88,8 +206,17 @@
                 videoElement.srcObject = null;
                 screenStream = null;
             }
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
             startBtn.disabled = false;
             stopBtn.disabled = true;
+            connectionPanel.style.display = 'none';
+            sharingCode.textContent = '';
+            connectBtn.disabled = false;
+            connectCode.disabled = false;
+            connectCode.value = '';
         }
     </script>
 </body>
