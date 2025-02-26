@@ -70,6 +70,17 @@
             width: 300px;
             margin-right: 10px;
         }
+
+        #room-id {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        
+        #viewers-count {
+            margin-top: 10px;
+            color: #666;
+        }
     </style>
 </head>
 <body>
@@ -80,14 +91,15 @@
         <button id="stopBtn" disabled>Stop Sharing</button>
         
         <div id="connection-panel" style="display: none;">
-            <h3>Share this code with viewers:</h3>
-            <div id="sharing-code"></div>
+            <h3>Share this room code with viewers:</h3>
+            <div id="room-id"></div>
+            <div id="viewers-count">Connected viewers: 0</div>
         </div>
     </div>
 
     <div id="viewer-panel">
         <h3>Join as viewer</h3>
-        <input type="text" id="connect-code" placeholder="Enter sharing code">
+        <input type="text" id="connect-code" placeholder="Enter room code" maxlength="6">
         <button id="connectBtn">Connect</button>
     </div>
     
@@ -100,20 +112,27 @@
         const stopBtn = document.getElementById('stopBtn');
         const videoElement = document.getElementById('screen-video');
         const connectionPanel = document.getElementById('connection-panel');
-        const sharingCode = document.getElementById('sharing-code');
+        const roomIdDisplay = document.getElementById('room-id');
         const connectCode = document.getElementById('connect-code');
         const connectBtn = document.getElementById('connectBtn');
+        const viewersCount = document.getElementById('viewers-count');
         
         let screenStream = null;
-        let peerConnection = null;
-        
-        // ICE server configuration for NAT traversal
+        let peerConnections = new Map(); // Store multiple peer connections
+        let isHost = false;
+        let roomId = null;
+
         const configuration = {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
                 { urls: 'stun:stun1.l.google.com:19302' }
             ]
         };
+
+        // Generate a random 6-character room ID
+        function generateRoomId() {
+            return Math.random().toString(36).substring(2, 8).toUpperCase();
+        }
 
         startBtn.addEventListener('click', async () => {
             try {
@@ -126,8 +145,14 @@
                 startBtn.disabled = true;
                 stopBtn.disabled = false;
 
-                // Create and display sharing code
-                createPeerConnection();
+                // Create room for sharing
+                isHost = true;
+                roomId = generateRoomId();
+                roomIdDisplay.textContent = roomId;
+                connectionPanel.style.display = 'block';
+                
+                // Start listening for viewer connections
+                listenForViewers();
                 
                 screenStream.getTracks()[0].addEventListener('ended', () => {
                     stopSharing();
@@ -138,65 +163,90 @@
             }
         });
 
-        async function createPeerConnection() {
-            peerConnection = new RTCPeerConnection(configuration);
+        async function listenForViewers() {
+            // Simulate a signaling server with polling
+            setInterval(async () => {
+                try {
+                    const response = await fetch(`/api/check-viewers/${roomId}`);
+                    const newViewers = await response.json();
+                    
+                    // Create connections for new viewers
+                    for (const viewerId of newViewers) {
+                        if (!peerConnections.has(viewerId)) {
+                            createPeerConnection(viewerId);
+                        }
+                    }
+                    
+                    viewersCount.textContent = `Connected viewers: ${peerConnections.size}`;
+                } catch (err) {
+                    console.error('Error checking for viewers:', err);
+                }
+            }, 1000);
+        }
+
+        async function createPeerConnection(viewerId) {
+            const peerConnection = new RTCPeerConnection(configuration);
+            peerConnections.set(viewerId, peerConnection);
             
-            // Add screen stream to peer connection
-            screenStream.getTracks().forEach(track => {
-                peerConnection.addTrack(track, screenStream);
-            });
+            if (isHost) {
+                screenStream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, screenStream);
+                });
+            }
 
-            // Create offer
-            const offer = await peerConnection.createOffer();
-            await peerConnection.setLocalDescription(offer);
-
-            // Generate sharing code (simplified version using base64)
-            const code = btoa(JSON.stringify(peerConnection.localDescription));
-            sharingCode.textContent = code;
-            connectionPanel.style.display = 'block';
-
-            // Handle ICE candidates
-            peerConnection.onicecandidate = event => {
+            peerConnection.onicecandidate = async (event) => {
                 if (event.candidate) {
-                    const newCode = btoa(JSON.stringify({
-                        sdp: peerConnection.localDescription,
-                        ice: event.candidate
-                    }));
-                    sharingCode.textContent = newCode;
+                    // Send ICE candidate to peer through signaling server
+                    await sendSignalingMessage(viewerId, {
+                        type: 'ice',
+                        candidate: event.candidate
+                    });
                 }
             };
+
+            if (!isHost) {
+                peerConnection.ontrack = (event) => {
+                    videoElement.srcObject = event.streams[0];
+                };
+            }
+
+            return peerConnection;
         }
 
         connectBtn.addEventListener('click', async () => {
             try {
-                const code = connectCode.value;
-                const { sdp, ice } = JSON.parse(atob(code));
-                
-                peerConnection = new RTCPeerConnection(configuration);
-                
-                // Handle incoming stream
-                peerConnection.ontrack = event => {
-                    videoElement.srcObject = event.streams[0];
-                };
-
-                // Set remote description
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
-                
-                // Create and send answer
-                const answer = await peerConnection.createAnswer();
-                await peerConnection.setLocalDescription(answer);
-
-                if (ice) {
-                    await peerConnection.addIceCandidate(new RTCIceCandidate(ice));
+                roomId = connectCode.value.toUpperCase();
+                if (roomId.length !== 6) {
+                    throw new Error('Invalid room code');
                 }
+
+                // Connect to host
+                const viewerId = generateRoomId(); // Generate unique viewer ID
+                const peerConnection = await createPeerConnection(viewerId);
                 
+                // Create and send offer
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                
+                await sendSignalingMessage(roomId, {
+                    type: 'offer',
+                    offer,
+                    viewerId
+                });
+
                 connectBtn.disabled = true;
                 connectCode.disabled = true;
             } catch (err) {
                 console.error('Error connecting:', err);
-                alert('Invalid sharing code or connection error');
+                alert('Invalid room code or connection error');
             }
         });
+
+        async function sendSignalingMessage(peerId, message) {
+            // Simulate sending message to signaling server
+            console.log('Sending signal:', peerId, message);
+            // In real implementation, send to actual server
+        }
 
         stopBtn.addEventListener('click', stopSharing);
 
@@ -206,17 +256,29 @@
                 videoElement.srcObject = null;
                 screenStream = null;
             }
-            if (peerConnection) {
-                peerConnection.close();
-                peerConnection = null;
+            
+            // Close all peer connections
+            for (const [viewerId, connection] of peerConnections) {
+                connection.close();
             }
+            peerConnections.clear();
+            
             startBtn.disabled = false;
             stopBtn.disabled = true;
             connectionPanel.style.display = 'none';
-            sharingCode.textContent = '';
+            roomIdDisplay.textContent = '';
             connectBtn.disabled = false;
             connectCode.disabled = false;
             connectCode.value = '';
+            viewersCount.textContent = 'Connected viewers: 0';
+            
+            if (isHost) {
+                // Notify server that room is closed
+                fetch(`/api/close-room/${roomId}`, { method: 'POST' });
+            }
+            
+            isHost = false;
+            roomId = null;
         }
     </script>
 </body>

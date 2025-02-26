@@ -11,15 +11,46 @@ document.addEventListener('DOMContentLoaded', () => {
     hideAllVisualizations();
 
     const TOTAL_SECONDS = 600; // 10 minutes
-    const INTERVAL = 5; // 5 second intervals
+    const INTERVAL = 10; // 10 second intervals
     const TOTAL_INTERVALS = TOTAL_SECONDS / INTERVAL;
 
     function initializeTimeline() {
         timeline.innerHTML = '';
+        
+        // Add minute labels container
+        const labelContainer = document.createElement('div');
+        labelContainer.className = 'time-labels';
+        
+        // Add cells containers
+        const cellContainer = document.createElement('div');
+        cellContainer.className = 'time-cells';
+        
+        const goalieContainer = document.createElement('div');
+        goalieContainer.className = 'goalie-cells';
+        
+        // Add all to timeline
+        timeline.appendChild(labelContainer);
+        timeline.appendChild(cellContainer);
+        timeline.appendChild(goalieContainer);
+        
+        // Create cells and labels
         for (let i = 0; i < TOTAL_INTERVALS; i++) {
             const cell = document.createElement('div');
             cell.className = 'time-cell';
-            timeline.appendChild(cell);
+            cellContainer.appendChild(cell);
+            
+            const goalieCell = document.createElement('div');
+            goalieCell.className = 'goalie-cell';
+            goalieContainer.appendChild(goalieCell);
+            
+            // Add minute labels (every 6 intervals = 1 minute)
+            if (i % 6 === 0) {
+                const minuteLabel = document.createElement('div');
+                minuteLabel.className = 'minute-label';
+                const minutes = 10 - (i / 6);
+                minuteLabel.textContent = minutes;
+                labelContainer.appendChild(minuteLabel);
+            }
         }
     }
 
@@ -45,37 +76,33 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.result-message').forEach(msg => msg.remove());
     }
 
-    async function simulateSingleGame(params) {
-        hideAllVisualizations();
-        gameVisualization.style.display = 'block';
-        document.querySelector('.chart-container').style.display = 'none';
-        initializeTimeline();
+    async function simulateSingleGame(params, skipAnimation = false) {
+        if (!skipAnimation) {
+            hideAllVisualizations();
+            gameVisualization.style.display = 'block';
+            document.querySelector('.chart-container').style.display = 'none';
+            initializeTimeline();
+        }
         
-        const cells = document.querySelectorAll('.time-cell');
+        const cells = !skipAnimation ? document.querySelectorAll('.time-cell') : null;
         let ourScore = 0;
         let theirScore = 1; // Start down by 1
         let timeRemaining = TOTAL_SECONDS;
         let isGoaliePulled = false;
 
-        // Update initial score display
-        document.getElementById('scoreDisplay').textContent = `Score: ${ourScore} - ${theirScore}`;
+        if (!skipAnimation) {
+            document.getElementById('scoreDisplay').textContent = `Score: ${ourScore} - ${theirScore}`;
+        }
 
         for (let i = 0; i < TOTAL_INTERVALS; i++) {
             timeRemaining = TOTAL_SECONDS - (i * INTERVAL);
             
-            // Only pull when down by 1 or 2 goals
-            const goalDiff = theirScore - ourScore;
-            isGoaliePulled = (timeRemaining <= params.pullTimeSeconds && goalDiff > 0 && goalDiff <= 2);
+            const scoreDifference = theirScore - ourScore;
+            isGoaliePulled = (timeRemaining <= params.pullTimeSeconds && scoreDifference <= 2 && theirScore > ourScore);
             
-            // Calculate event probabilities for this interval
-            const ourRate = isGoaliePulled ? params.ourPulledRate : params.ourNormalRate;
-            const theirRate = isGoaliePulled ? params.theirPulledRate : params.theirNormalRate;
+            const ourProb = isGoaliePulled ? params.ourPulledProb : params.ourNormalProb;
+            const theirProb = isGoaliePulled ? params.theirPulledProb : params.theirNormalProb;
             
-            // Convert per-minute rates to per-interval probabilities
-            const ourProb = ourRate * (INTERVAL / 60);
-            const theirProb = theirRate * (INTERVAL / 60);
-            
-            // Simulate interval
             const random = Math.random();
             let event = 'none';
             
@@ -87,31 +114,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 theirScore++;
             }
             
-            // Animate cell
-            await new Promise(resolve => setTimeout(resolve, 50));
-            cells[i].classList.add(event);
-            
-            // Update displays with corrected time
-            document.getElementById('gameTime').textContent = 
-                `Time Remaining: ${formatTime(Math.max(0, timeRemaining - INTERVAL))}`;
-            document.getElementById('scoreDisplay').textContent = `Score: ${ourScore} - ${theirScore}`;
-            document.getElementById('goalieStatus').textContent = `Goalie: ${isGoaliePulled ? 'Pulled' : 'In Net'}`;
+            if (!skipAnimation) {
+                // Animate cells
+                await new Promise(resolve => setTimeout(resolve, 50));
+                cells[i].classList.add(event);
+                
+                // Update goalie status cell
+                const goalieCells = document.querySelectorAll('.goalie-cell');
+                if (isGoaliePulled) {
+                    goalieCells[i].classList.add('pulled');
+                }
+                
+                // Update displays
+                document.getElementById('gameTime').textContent = 
+                    `Time Remaining: ${formatTime(Math.max(0, timeRemaining - INTERVAL))}`;
+                document.getElementById('scoreDisplay').textContent = `Score: ${ourScore} - ${theirScore}`;
+                document.getElementById('goalieStatus').textContent = `Goalie: ${isGoaliePulled ? 'Pulled' : 'In Net'}`;
+            }
         }
         
-        // Add result message after simulation
-        const resultMessage = document.createElement('div');
-        resultMessage.className = 'result-message';
-        if (ourScore > theirScore) {
-            resultMessage.textContent = 'We win! 🎉';
-            resultMessage.style.color = '#2ecc71';
-        } else if (ourScore < theirScore) {
-            resultMessage.textContent = 'We lose 😢';
-            resultMessage.style.color = '#e74c3c';
-        } else {
-            resultMessage.textContent = 'It\'s a tie! 🤝';
-            resultMessage.style.color = '#3498db';
+        if (!skipAnimation) {
+            // Add result message after simulation
+            const resultMessage = document.createElement('div');
+            resultMessage.className = 'result-message';
+            if (ourScore > theirScore) {
+                resultMessage.textContent = 'We win! 🎉';
+                resultMessage.style.color = '#2ecc71';
+            } else if (ourScore < theirScore) {
+                resultMessage.textContent = 'We lose 😢';
+                resultMessage.style.color = '#e74c3c';
+            } else {
+                resultMessage.textContent = 'It\'s a tie! 🤝';
+                resultMessage.style.color = '#3498db';
+            }
+            document.getElementById('gameVisualization').appendChild(resultMessage);
         }
-        document.getElementById('gameVisualization').appendChild(resultMessage);
         
         return { ourScore, theirScore };
     }
@@ -123,30 +160,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const results = [];
         for (let i = 0; i < 1000; i++) {
-            let ourScore = 0;
-            let theirScore = 1;
-            let timeRemaining = TOTAL_SECONDS;
-            
-            for (let t = 0; t < TOTAL_INTERVALS; t++) {
-                timeRemaining = TOTAL_SECONDS - (t * INTERVAL);
-                const goalDiff = theirScore - ourScore;
-                const isGoaliePulled = (timeRemaining <= params.pullTimeSeconds && goalDiff > 0 && goalDiff <= 2);
-                
-                const ourRate = isGoaliePulled ? params.ourPulledRate : params.ourNormalRate;
-                const theirRate = isGoaliePulled ? params.theirPulledRate : params.theirNormalRate;
-                
-                const ourProb = ourRate * (INTERVAL / 60);
-                const theirProb = theirRate * (INTERVAL / 60);
-                
-                const random = Math.random();
-                if (random < ourProb) {
-                    ourScore++;
-                } else if (random < ourProb + theirProb) {
-                    theirScore++;
-                }
-            }
-            
-            results.push({ ourScore, theirScore });
+            const result = await simulateSingleGame(params, true);
+            results.push(result);
         }
         
         updateStats(results);
@@ -254,10 +269,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function getParams() {
         return {
-            ourNormalRate: parseFloat(document.getElementById('ourNormalRate').value),
-            ourPulledRate: parseFloat(document.getElementById('ourPulledRate').value),
-            theirNormalRate: parseFloat(document.getElementById('theirNormalRate').value),
-            theirPulledRate: parseFloat(document.getElementById('theirPulledRate').value),
+            ourNormalProb: parseFloat(document.getElementById('ourNormalProb').value) / 100,
+            ourPulledProb: parseFloat(document.getElementById('ourPulledProb').value) / 100,
+            theirNormalProb: parseFloat(document.getElementById('theirNormalProb').value) / 100,
+            theirPulledProb: parseFloat(document.getElementById('theirPulledProb').value) / 100,
             pullTimeSeconds: parseFloat(document.getElementById('pullTime').value) * 60
         };
     }
@@ -277,31 +292,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Run 1000 simulations for each pull time
             for (let i = 0; i < 1000; i++) {
-                let ourScore = 0;
-                let theirScore = 1;
-                let timeRemaining = TOTAL_SECONDS;
-                
-                for (let t = 0; t < TOTAL_INTERVALS; t++) {
-                    timeRemaining = TOTAL_SECONDS - (t * INTERVAL);
-                    const goalDiff = theirScore - ourScore;
-                    const isGoaliePulled = (timeRemaining <= pullTime && goalDiff > 0 && goalDiff <= 2);
-                    
-                    const ourRate = isGoaliePulled ? params.ourPulledRate : params.ourNormalRate;
-                    const theirRate = isGoaliePulled ? params.theirPulledRate : params.theirNormalRate;
-                    
-                    const ourProb = ourRate * (INTERVAL / 60);
-                    const theirProb = theirRate * (INTERVAL / 60);
-                    
-                    const random = Math.random();
-                    if (random < ourProb) {
-                        ourScore++;
-                    } else if (random < ourProb + theirProb) {
-                        theirScore++;
-                    }
-                }
-                
+                const result = await simulateSingleGame(params, true);
                 // Count wins and ties as success
-                if (ourScore >= theirScore) {
+                if (result.ourScore >= result.theirScore) {
                     successCount++;
                 }
             }
@@ -384,6 +377,12 @@ document.addEventListener('DOMContentLoaded', () => {
             optimizationChart.destroy();
         }
 
+        // Find optimal point
+        const optimalX = -b_unnorm / (2 * a);
+        const optimalY = optimalX >= 0 && optimalX <= 10 ? 
+            a * optimalX * optimalX + b_unnorm * optimalX + c_unnorm : 
+            null;
+
         optimizationChart = new Chart(ctx, {
             type: 'scatter',
             data: {
@@ -404,9 +403,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     type: 'line',
                     tension: 0.4,
                     fill: false
-                }]
+                },
+                // Add vertical line at optimal point if it exists
+                ...(optimalX >= 0 && optimalX <= 10 ? [{
+                    label: 'Optimal Time',
+                    data: [{x: optimalX, y: minY - yPadding}, {x: optimalX, y: optimalY}],
+                    borderColor: 'rgba(231, 76, 60, 0.8)',
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                    showLine: true,
+                    type: 'line'
+                }] : [])
+                ]
             },
             options: {
+                animation: false,  // Disable animation
                 responsive: true,
                 scales: {
                     x: {
@@ -437,23 +448,38 @@ document.addEventListener('DOMContentLoaded', () => {
                     },
                     legend: {
                         labels: {
-                            usePointStyle: true
+                            usePointStyle: true,
+                            filter: function(legendItem, data) {
+                                // Hide the vertical line from legend
+                                return !legendItem.text.includes('Optimal Time');
+                            }
+                        }
+                    },
+                    annotation: {
+                        annotations: {
+                            ...(optimalX >= 0 && optimalX <= 10 ? {
+                                optimalTimeLabel: {
+                                    type: 'label',
+                                    xValue: optimalX,
+                                    yValue: optimalY,
+                                    content: `${optimalX.toFixed(1)} min`,
+                                    backgroundColor: 'rgba(231, 76, 60, 0.8)',
+                                    color: 'white',
+                                    padding: 4,
+                                    borderRadius: 4,
+                                    position: 'start',
+                                    xAdjust: 10,
+                                    yAdjust: 10
+                                }
+                            } : {})
                         }
                     }
                 }
             }
         });
 
-        // Remove any existing result message before adding new one
-        const existingMessage = document.querySelector('.result-message');
-        if (existingMessage) {
-            existingMessage.remove();
-        }
-
-        // Find and display optimal pull time
-        const optimalX = -b_unnorm / (2 * a);
+        // Add result message
         if (optimalX >= 0 && optimalX <= 10) {
-            const optimalY = a * optimalX * optimalX + b_unnorm * optimalX + c_unnorm;
             const resultMessage = document.createElement('div');
             resultMessage.className = 'result-message';
             resultMessage.style.fontSize = '1.2em';
@@ -465,7 +491,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Event Listeners
     singleSimButton.addEventListener('click', () => {
         const params = getParams();
-        if (isNaN(params.ourNormalRate) || params.ourNormalRate < 0) {
+        if (isNaN(params.ourNormalProb) || params.ourNormalProb < 0) {
             alert('Please enter valid goal rates.');
             return;
         }
@@ -482,7 +508,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     multiSimButton.addEventListener('click', () => {
         const params = getParams();
-        if (isNaN(params.ourNormalRate) || params.ourNormalRate < 0) {
+        if (isNaN(params.ourNormalProb) || params.ourNormalProb < 0) {
             alert('Please enter valid goal rates.');
             return;
         }
@@ -499,7 +525,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('optimizeButton').addEventListener('click', () => {
         const params = getParams();
-        if (isNaN(params.ourNormalRate) || params.ourNormalRate < 0) {
+        if (isNaN(params.ourNormalProb) || params.ourNormalProb < 0) {
             alert('Please enter valid goal rates.');
             return;
         }

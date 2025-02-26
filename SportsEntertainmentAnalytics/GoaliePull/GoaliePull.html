@@ -7,28 +7,34 @@
     <link rel="stylesheet" href="GoaliePull-styles.css">
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
 </head>
 <body>
     <div class="container">
         <h1>Hockey Goalie Pull Simulator</h1>
+        <div class="simulation-explanation">
+            This simulator starts with your team down 1-0 with 10 minutes remaining. Every 10 seconds, 
+            there's a chance for either team to score based on the probabilities below. The goalie 
+            will be pulled when trailing by 1 or 2 goals within your specified pull time.
+        </div>
         <div class="controls">
             <div class="rate-inputs">
                 <div class="rate-group">
                     <h3>Our Team</h3>
-                    <label for="ourNormalRate">Goals/Min (Normal):</label>
-                    <input type="number" id="ourNormalRate" value="0.05" step="0.01" min="0" max="1">
+                    <label for="ourNormalProb">Goal Probability per 10s (Normal):</label>
+                    <input type="number" id="ourNormalProb" value="0.65" step="0.05" min="0" max="100">%
                     
-                    <label for="ourPulledRate">Goals/Min (Pulled):</label>
-                    <input type="number" id="ourPulledRate" value="0.15" step="0.01" min="0" max="1">
+                    <label for="ourPulledProb">Goal Probability per 10s (Pulled):</label>
+                    <input type="number" id="ourPulledProb" value="1.97" step="0.05" min="0" max="100">%
                 </div>
                 
                 <div class="rate-group">
                     <h3>Opposition</h3>
-                    <label for="theirNormalRate">Goals/Min (Normal):</label>
-                    <input type="number" id="theirNormalRate" value="0.05" step="0.01" min="0" max="1">
+                    <label for="theirNormalProb">Goal Probability per 10s (Normal):</label>
+                    <input type="number" id="theirNormalProb" value="0.65" step="0.05" min="0" max="100">%
                     
-                    <label for="theirPulledRate">Goals/Min (Empty Net):</label>
-                    <input type="number" id="theirPulledRate" value="0.3" step="0.01" min="0" max="1">
+                    <label for="theirPulledProb">Goal Probability per 10s (Empty Net):</label>
+                    <input type="number" id="theirPulledProb" value="4.3" step="0.05" min="0" max="100">%
                 </div>
             </div>
             <div class="strategy-controls">

@@ -147,20 +147,50 @@ button:hover {
 }
 
 .timeline {
-    display: grid;
-    grid-template-columns: repeat(120, 1fr);
-    gap: 1px;
     margin: 20px 0;
-    background: #f0f0f0;
     padding: 10px;
-    border-radius: 4px;
+    background: #f8f9fa;
+    border-radius: 8px;
 }
 
-.time-cell {
-    aspect-ratio: 1;
-    background: #fff;
-    border: 1px solid #ddd;
-    transition: all 0.3s ease;
+.time-labels {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 8px;
+    margin-bottom: 5px;
+}
+
+.minute-label {
+    width: 20px;
+    text-align: center;
+    font-size: 0.8em;
+    color: #666;
+}
+
+.time-cells, .goalie-cells {
+    display: flex;
+    gap: 2px;
+}
+
+.goalie-cells {
+    margin-top: 2px;
+}
+
+.time-cell, .goalie-cell {
+    flex: 1;
+    height: 20px;
+    background-color: #ddd;
+    border-radius: 3px;
+    transition: background-color 0.3s;
+}
+
+.goalie-cell {
+    height: 20px;
+    background-color: #ddd;
+}
+
+.goalie-cell.pulled {
+    background-color: #e67e22;  /* Orange color for pulled goalie */
 }
 
 .time-cell.our-goal {
