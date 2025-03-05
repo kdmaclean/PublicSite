@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Film Selection Information Cascade Experiment</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .experiment-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .decision-history {
+            margin-top: 2rem;
+            padding: 1rem;
+            background-color: white;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+        .scenario-card {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            background-color: white;
+        }
+        .private-info {
+            font-weight: bold;
+            color: #0d6efd;
+        }
+        .previous-decisions {
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        .nav-tabs {
+            margin-bottom: 2rem;
+        }
+        .tab-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0 0 10px 10px;
+        }
+        .math-explanation {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .math-step {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">Film Selection Information Cascade Experiment</h1>
+        
+        <!-- Experiment Content -->
+        <div class="experiment-container">
+            <div class="experiment-rules mb-4">
+                <h3>Experiment Rules</h3>
+                <ul>
+                    <li>There are two types of films: "Good" and "Bad"</li>
+                    <li>Your private information is correct 2/3 of the time</li>
+                    <li>You can see the decisions of previous people (if any)</li>
+                    <li>Your goal is to maximize your probability of making the correct decision</li>
+                </ul>
+            </div>
+
+            <div class="experiment-controls text-center mb-4">
+                <div class="mb-3">
+                    <label for="positionSelect" class="form-label">Select Your Position (1-5):</label>
+                    <select class="form-select d-inline-block w-auto mx-auto" id="positionSelect">
+                        <option value="1">Position 1</option>
+                        <option value="2">Position 2</option>
+                        <option value="3">Position 3</option>
+                        <option value="4">Position 4</option>
+                        <option value="5">Position 5</option>
+                    </select>
+                </div>
+                <button id="startExperiment" class="btn btn-primary">Start New Scenario</button>
+            </div>
+
+            <div class="scenario-card">
+                <h4>Your Scenario</h4>
+                <p>You are Person <span id="playerPosition">-</span></p>
+                <p>Your Private Information: <span class="private-info">Waiting...</span></p>
+                
+                <div class="previous-decisions" id="previousDecisions" style="display: none;">
+                    <h5>Previous Decisions:</h5>
+                    <div id="previousDecisionsList"></div>
+                </div>
+
+                <div class="decision-buttons mt-3">
+                    <button class="btn btn-outline-primary" disabled>Go to Movie</button>
+                    <button class="btn btn-outline-danger" disabled>Don't Go</button>
+                </div>
+            </div>
+
+            <div class="experiment-results mt-4" style="display: none;">
+                <h3>Results</h3>
+                <p>Actual Film Quality: <span id="actualQuality"></span></p>
+                <p>Your Decision was: <span id="playerDecision"></span></p>
+                <p>Your Decision was: <span id="decisionCorrect"></span></p>
+                
+                <div class="previous-decisions mt-3">
+                    <h5>Previous Decisions (with Private Information):</h5>
+                    <div id="previousDecisionsWithInfo"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hidden Mathematical Explanation (kept for later) -->
+        <div class="math-explanation" style="display: none;">
+            <h2>Mathematical Explanation of Information Cascades</h2>
+            
+            <div class="math-step">
+                <h3>1. Basic Setup</h3>
+                <p>In this experiment, we have:</p>
+                <ul>
+                    <li>Two possible states: Good film (G) or Bad film (B)</li>
+                    <li>Prior probability: P(G) = P(B) = 0.5</li>
+                    <li>Each person receives a private signal (S) that is correct with probability 2/3</li>
+                    <li>Signal probabilities: P(S=G|G) = P(S=B|B) = 2/3, P(S=G|B) = P(S=B|G) = 1/3</li>
+                </ul>
+            </div>
+
+            <div class="math-step">
+                <h3>2. First Person's Decision</h3>
+                <p>The first person uses Bayes' theorem to update their belief:</p>
+                <ul>
+                    <li>If S = Good: P(G|S) = P(S|G)P(G)/P(S) = (2/3)(0.5)/(0.5) = 2/3 > 1/2, so they choose M</li>
+                    <li>If S = Bad: P(G|S) = P(S|G)P(G)/P(S) = (1/3)(0.5)/(0.5) = 1/3 < 1/2, so they choose D</li>
+                </ul>
+                <p>Note: P(S) = P(S|G)P(G) + P(S|B)P(B) = (2/3)(0.5) + (1/3)(0.5) = 0.5</p>
+            </div>
+
+            <div class="math-step">
+                <h3>3. Second Person's Decision</h3>
+                <p>The second person has:</p>
+                <ul>
+                    <li>Their private signal (S₂)</li>
+                    <li>The first person's decision (D₁)</li>
+                </ul>
+                <p>They update their belief using Bayes' theorem:</p>
+                <ul>
+                    <li>First, update based on their private signal: P(G|S₂)</li>
+                    <li>Then, update based on D₁: P(G|D₁,S₂) = P(D₁|G,S₂)P(G|S₂)/P(D₁|S₂)</li>
+                    <li>If P(G|D₁,S₂) > 0.5, choose M; if < 0.5, choose D; if = 0.5, follow private signal</li>
+                </ul>
+            </div>
+
+            <div class="math-step">
+                <h3>4. Information Cascade Formation</h3>
+                <p>An information cascade occurs when:</p>
+                <ul>
+                    <li>Previous decisions provide strong evidence (P(G|D₁,...,Dₙ) > 0.5 or < 0.5)</li>
+                    <li>A person's private signal disagrees with this evidence</li>
+                    <li>They rationally choose to follow the majority despite their private signal</li>
+                </ul>
+                <p>This happens because:</p>
+                <ul>
+                    <li>Each decision provides information about that person's private signal</li>
+                    <li>Multiple decisions in the same direction multiply the evidence</li>
+                    <li>Eventually, the evidence from previous decisions can outweigh an individual's private signal</li>
+                </ul>
+            </div>
+
+            <div class="math-step">
+                <h3>5. Example</h3>
+                <p>Consider this sequence:</p>
+                <ol>
+                    <li>Person 1: S₁ = Good → M (P(G|S₁) = 2/3)</li>
+                    <li>Person 2: S₂ = Good → M (P(G|S₂,D₁) > 0.5)</li>
+                    <li>Person 3: S₃ = Bad → ?</li>
+                </ol>
+                <p>Person 3's calculation:</p>
+                <ul>
+                    <li>P(G|S₃) = 1/3 (from their private signal)</li>
+                    <li>P(G|D₁,D₂,S₃) = P(D₁,D₂|G,S₃)P(G|S₃)/P(D₁,D₂|S₃)</li>
+                    <li>Given two "Go" decisions, P(G|D₁,D₂,S₃) > 0.5</li>
+                    <li>Therefore, they rationally choose M despite their private signal</li>
+                </ul>
+                <p>This creates an information cascade because Person 3's private signal is outweighed by the evidence from previous decisions.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let playerPosition;
+        let actualFilmQuality;
+        let playerDecision;
+        let privateInformation;
+        let previousDecisions = [];
+
+        function startNewExperiment() {
+            // Reset experiment state
+            playerDecision = null;
+            previousDecisions = [];
+            
+            // Get selected position
+            playerPosition = parseInt(document.getElementById('positionSelect').value);
+            
+            // Randomly determine actual film quality
+            actualFilmQuality = Math.random() < 0.5 ? 'Good' : 'Bad';
+            
+            // Generate private information
+            const isCorrect = Math.random() < 0.67;
+            privateInformation = isCorrect ? actualFilmQuality : (actualFilmQuality === 'Good' ? 'Bad' : 'Good');
+            
+            // Generate previous decisions if not first player
+            if (playerPosition > 1) {
+                for (let i = 0; i < playerPosition - 1; i++) {
+                    // Generate private information for this person
+                    const isCorrect = Math.random() < 0.67;
+                    const prevInfo = isCorrect ? actualFilmQuality : (actualFilmQuality === 'Good' ? 'Bad' : 'Good');
+                    
+                    // Calculate decision based on private info and previous decisions
+                    let decision;
+                    if (i === 0) {
+                        // First person only uses their private information
+                        decision = prevInfo === 'Good' ? 'Go to Movie' : "Don't Go";
+                    } else {
+                        // Count previous decisions
+                        const prevDecisions = previousDecisions.slice(0, i);
+                        let goCount = prevDecisions.filter(d => d.decision === 'Go to Movie').length;
+                        let dontGoCount = prevDecisions.filter(d => d.decision === "Don't Go").length;
+                        
+                        // Add private information to the count
+                        if (prevInfo === 'Good') {
+                            goCount++;
+                        } else {
+                            dontGoCount++;
+                        }
+                        
+                        // Make decision based on majority
+                        if (goCount > dontGoCount) {
+                            decision = 'Go to Movie';
+                        } else if (dontGoCount > goCount) {
+                            decision = "Don't Go";
+                        } else {
+                            // Use private information as tiebreaker
+                            decision = prevInfo === 'Good' ? 'Go to Movie' : "Don't Go";
+                        }
+                    }
+                    
+                    previousDecisions.push({
+                        position: i + 1,
+                        info: prevInfo,
+                        decision: decision
+                    });
+                }
+            }
+
+            // Update UI
+            document.getElementById('playerPosition').textContent = playerPosition;
+            document.querySelector('.private-info').textContent = privateInformation;
+            
+            // Show previous decisions if any
+            const previousDecisionsDiv = document.getElementById('previousDecisions');
+            const previousDecisionsList = document.getElementById('previousDecisionsList');
+            previousDecisionsList.innerHTML = '';
+            
+            if (previousDecisions.length > 0) {
+                previousDecisions.forEach(prev => {
+                    const decisionItem = document.createElement('div');
+                    decisionItem.textContent = `Person ${prev.position}: ${prev.decision}`;
+                    previousDecisionsList.appendChild(decisionItem);
+                });
+                previousDecisionsDiv.style.display = 'block';
+            } else {
+                previousDecisionsDiv.style.display = 'none';
+            }
+
+            // Enable decision buttons
+            document.querySelectorAll('.decision-buttons button').forEach(btn => {
+                btn.disabled = false;
+                btn.onclick = () => makeDecision(btn.textContent.trim());
+            });
+            
+            // Hide results
+            document.querySelector('.experiment-results').style.display = 'none';
+        }
+
+        function makeDecision(decision) {
+            playerDecision = decision;
+            
+            // Disable decision buttons
+            document.querySelectorAll('.decision-buttons button').forEach(btn => {
+                btn.disabled = true;
+            });
+            
+            // Show results
+            document.getElementById('actualQuality').textContent = actualFilmQuality;
+            document.getElementById('playerDecision').textContent = decision;
+            
+            const isCorrect = (decision === 'Go to Movie' && actualFilmQuality === 'Good') ||
+                            (decision === "Don't Go" && actualFilmQuality === 'Bad');
+            
+            document.getElementById('decisionCorrect').textContent = isCorrect ? 'Correct!' : 'Incorrect';
+            document.getElementById('decisionCorrect').style.color = isCorrect ? 'green' : 'red';
+            
+            // Show previous decisions with private information
+            const previousDecisionsWithInfo = document.getElementById('previousDecisionsWithInfo');
+            previousDecisionsWithInfo.innerHTML = '';
+            
+            if (previousDecisions.length > 0) {
+                previousDecisions.forEach(prev => {
+                    const decisionItem = document.createElement('div');
+                    decisionItem.textContent = `Person ${prev.position}: ${prev.decision} (Private Info: ${prev.info})`;
+                    previousDecisionsWithInfo.appendChild(decisionItem);
+                });
+            } else {
+                previousDecisionsWithInfo.innerHTML = '<div>No previous decisions</div>';
+            }
+            
+            document.querySelector('.experiment-results').style.display = 'block';
+        }
+
+        // Event Listeners
+        document.getElementById('startExperiment').addEventListener('click', startNewExperiment);
+    </script>
+</body>
+</html>
