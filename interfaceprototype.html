@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Annoying Button</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            overflow: hidden;
+        }
+
+        #annoying-button {
+            position: absolute;
+            padding: 15px 30px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        #annoying-button:hover {
+            background-color: #45a049;
+        }
+
+        #annoying-button.mega-jump {
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+    </style>
+</head>
+<body>
+    <button id="annoying-button">Next</button>
+
+    <script>
+        const button = document.getElementById('annoying-button');
+        const maxDistance = 100; // Distance at which the button starts moving
+        const megaJumpThreshold = 40; // Distance at which mega jump triggers
+        let isMoving = false; // Flag to prevent multiple movements at once
+        let lastMoveTime = 0; // Track the last movement time
+        const moveDelay = 100; // Minimum time between movements in milliseconds
+
+        function moveButton(e) {
+            const currentTime = Date.now();
+            if (isMoving || currentTime - lastMoveTime < moveDelay) {
+                return; // Skip if already moving or too soon
+            }
+
+            const buttonRect = button.getBoundingClientRect();
+            const buttonX = buttonRect.left + buttonRect.width / 2;
+            const buttonY = buttonRect.top + buttonRect.height / 2;
+            
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+            
+            // Calculate distance between mouse and button
+            const distance = Math.sqrt(
+                Math.pow(mouseX - buttonX, 2) + 
+                Math.pow(mouseY - buttonY, 2)
+            );
+            
+            if (distance < maxDistance) {
+                isMoving = true;
+                lastMoveTime = currentTime;
+
+                // Determine if this should be a mega jump
+                const isMegaJump = distance < megaJumpThreshold;
+                const moveDistance = isMegaJump ? Math.min(window.innerWidth, window.innerHeight) / 2 : 100;
+                
+                // Calculate new position
+                const angle = Math.random() * Math.PI * 2;
+                
+                let newX = buttonRect.left + Math.cos(angle) * moveDistance;
+                let newY = buttonRect.top + Math.sin(angle) * moveDistance;
+                
+                // Keep button within viewport bounds
+                newX = Math.min(Math.max(0, newX), window.innerWidth - buttonRect.width);
+                newY = Math.min(Math.max(0, newY), window.innerHeight - buttonRect.height);
+                
+                // Add mega jump animation class if needed
+                button.classList.toggle('mega-jump', isMegaJump);
+                
+                button.style.left = newX + 'px';
+                button.style.top = newY + 'px';
+                
+                // Reset the moving flag and remove mega jump class after animation
+                const animationDuration = isMegaJump ? 500 : 200;
+                setTimeout(() => {
+                    isMoving = false;
+                    if (isMegaJump) {
+                        button.classList.remove('mega-jump');
+                    }
+                }, animationDuration);
+            }
+        }
+
+        // Use requestAnimationFrame for smoother mouse tracking
+        let ticking = false;
+        document.addEventListener('mousemove', (e) => {
+            if (!ticking) {
+                window.requestAnimationFrame(() => {
+                    moveButton(e);
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        });
+    </script>
+</body>
+</html>
