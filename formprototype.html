@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+
+        .form-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: 300px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .form-group.active {
+            display: block;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #cccccc;
+            text-shadow: 1px 1px 1px white;
+        }
+
+        input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #999;
+        }
+
+        .confirmation-dialog {
+            position: fixed;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            display: none;
+        }
+
+        button {
+            padding: 8px 16px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .progress {
+            margin-bottom: 20px;
+            color: #999;
+        }
+
+        .number-spinner-container {
+            display: flex;
+            gap: 2px;
+            justify-content: space-between;
+        }
+
+        .number-spinner {
+            width: 30px !important;
+            text-align: center;
+            -moz-appearance: textfield;
+        }
+
+        .number-spinner::-webkit-outer-spin-button,
+        .number-spinner::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .spinner-control {
+            display: flex;
+            flex-direction: column;
+            width: 30px;
+        }
+
+        .spinner-button {
+            padding: 2px;
+            font-size: 10px;
+            background: #e0e0e0;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .spinner-value {
+            text-align: center;
+            border: 1px solid #ddd;
+            padding: 4px 0;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <div class="progress">Step <span id="currentStep">1</span> of 4</div>
+        
+        <div class="form-group active" id="group1">
+            <label for="name">Your Name</label>
+            <input type="text" id="name" name="name">
+        </div>
+
+        <div class="form-group" id="group2">
+            <label for="studentId">Student Number (click carefully)</label>
+            <div class="number-spinner-container" id="studentNumberContainer">
+            </div>
+        </div>
+
+        <div class="form-group" id="group3">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" name="email">
+        </div>
+
+        <div class="form-group" id="group4">
+            <label for="phone">Phone Number</label>
+            <input type="tel" id="phone" name="phone">
+        </div>
+
+        <button onclick="nextStep()" id="nextBtn">Continue</button>
+    </div>
+
+    <div class="confirmation-dialog" id="confirmDialog">
+        <p>Are you sure that's correct?</p>
+        <button onclick="confirmYes()">Yes</button>
+        <button onclick="confirmNo()">No</button>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 4;
+        let confirmationAttempts = 0;
+        
+        function nextStep() {
+            if (confirmationAttempts < 3) {
+                showConfirmDialog();
+                return;
+            }
+            
+            confirmationAttempts = 0;
+            document.querySelector(`#group${currentStep}`).classList.remove('active');
+            currentStep = currentStep < totalSteps ? currentStep + 1 : 1;
+            document.querySelector(`#group${currentStep}`).classList.add('active');
+            document.getElementById('currentStep').textContent = currentStep;
+            
+            if (currentStep === totalSteps) {
+                document.getElementById('nextBtn').textContent = 'Submit';
+            } else {
+                document.getElementById('nextBtn').textContent = 'Continue';
+            }
+        }
+
+        function showConfirmDialog() {
+            const dialog = document.getElementById('confirmDialog');
+            dialog.style.display = 'block';
+            dialog.style.left = `${Math.random() * (window.innerWidth - 300)}px`;
+            dialog.style.top = `${Math.random() * (window.innerHeight - 200)}px`;
+        }
+
+        function confirmYes() {
+            confirmationAttempts++;
+            document.getElementById('confirmDialog').style.display = 'none';
+            if (confirmationAttempts >= 3) {
+                nextStep();
+            } else {
+                setTimeout(showConfirmDialog, 500);
+            }
+        }
+
+        function confirmNo() {
+            document.getElementById('confirmDialog').style.display = 'none';
+            confirmationAttempts = 0;
+        }
+
+        // Random focus jumping
+        setInterval(() => {
+            if (Math.random() < 0.1) { // 10% chance every 2 seconds
+                const inputs = document.querySelectorAll('input');
+                const randomInput = inputs[Math.floor(Math.random() * inputs.length)];
+                randomInput.focus();
+            }
+        }, 2000);
+
+        // Make the cursor randomly disappear
+        document.addEventListener('mousemove', (e) => {
+            if (Math.random() < 0.10) { // 5% chance on mouse move
+                document.body.style.cursor = 'none';
+                setTimeout(() => {
+                    document.body.style.cursor = 'default';
+                }, 1000);
+            }
+        });
+
+        // Initialize the student number spinners
+        const studentNumberContainer = document.getElementById('studentNumberContainer');
+        for (let i = 0; i < 9; i++) {
+            const spinnerGroup = document.createElement('div');
+            spinnerGroup.className = 'spinner-control';
+            
+            const upButton = document.createElement('button');
+            upButton.className = 'spinner-button';
+            upButton.textContent = '▲';
+            
+            const valueDiv = document.createElement('div');
+            valueDiv.className = 'spinner-value';
+            valueDiv.textContent = '0';
+            
+            const downButton = document.createElement('button');
+            downButton.className = 'spinner-button';
+            downButton.textContent = '▼';
+            
+            spinnerGroup.appendChild(upButton);
+            spinnerGroup.appendChild(valueDiv);
+            spinnerGroup.appendChild(downButton);
+            
+            upButton.addEventListener('click', () => {
+                let value = parseInt(valueDiv.textContent);
+                value = (value + 1) % 10;
+                valueDiv.textContent = value;
+            });
+            
+            downButton.addEventListener('click', () => {
+                let value = parseInt(valueDiv.textContent);
+                value = (value - 1 + 10) % 10;
+                valueDiv.textContent = value;
+            });
+            
+            studentNumberContainer.appendChild(spinnerGroup);
+        }
+
+        // Randomly change spinner values
+        setInterval(() => {
+            if (currentStep === 2 && Math.random() < 0.15) { // 15% chance every 3 seconds when on student number step
+                const spinners = document.querySelectorAll('.spinner-value');
+                const randomSpinner = spinners[Math.floor(Math.random() * spinners.length)];
+                const currentValue = parseInt(randomSpinner.textContent);
+                const newValue = (currentValue + (Math.random() < 0.5 ? 1 : -1) + 10) % 10;
+                randomSpinner.textContent = newValue;
+            }
+        }, 3000);
+
+        // Get student number value for confirmation
+        function getStudentNumber() {
+            const spinners = document.querySelectorAll('.spinner-value');
+            return Array.from(spinners).map(spinner => spinner.textContent).join('');
+        }
+    </script>
+</body>
+</html>
