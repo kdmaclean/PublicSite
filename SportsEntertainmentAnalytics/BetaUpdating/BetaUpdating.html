@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Beta Distribution Visualizer</title>
+    <title>Beta Distribution Bayesian Updating</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
             background-color: #f5f5f5;
@@ -21,62 +21,30 @@
             display: flex;
             flex-direction: column;
         }
+        .section {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
         .controls {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 20px;
-            margin-bottom: 30px;
-        }
-        .presets {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        .preset-button {
-            padding: 8px 16px;
-            border: none;
-            background-color: #4361ee;
-            color: white;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.2s;
-        }
-        .preset-button:hover {
-            background-color: #3251d4;
-        }
-        .parameter-control {
-            background-color: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-        }
-        .stats {
-            background-color: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
             margin-bottom: 20px;
         }
-        .stat-row {
+        .simulation-controls {
             display: flex;
+            gap: 15px;
             align-items: center;
-            gap: 10px;
-            margin: 5px 0;
-        }
-        .formula {
-            color: #666;
-            font-style: italic;
-            font-size: 14px;
-        }
-        .stat-value {
-            font-weight: bold;
-            color: #4361ee;
+            justify-content: center;
+            margin-bottom: 20px;
         }
         .slider-container {
             display: flex;
             align-items: center;
             gap: 10px;
+            margin: 10px 0;
         }
         input[type="range"] {
             flex-grow: 1;
@@ -87,60 +55,138 @@
             border: 1px solid #ddd;
             border-radius: 4px;
         }
+        button {
+            padding: 8px 16px;
+            border: none;
+            background-color: #4361ee;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #3251d4;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 10px;
+        }
+        .stat-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 5px 0;
+            justify-content: center;
+        }
+        .formula {
+            color: #666;
+            font-style: italic;
+            font-size: 14px;
+        }
+        .stat-value {
+            font-weight: bold;
+            color: #4361ee;
+        }
         canvas {
             margin-top: 20px;
-            flex-grow: 1;
         }
-        h1 {
+        h1, h2 {
             color: #333;
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
         label {
             font-weight: bold;
             color: #555;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .results {
+            text-align: center;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        #drawResults {
+            margin: 10px 0;
+            font-family: monospace;
+            letter-spacing: 2px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Beta Distribution Visualizer</h1>
-        <div class="presets">
-            <button class="preset-button" data-alpha="1" data-beta="1">Uniform (α=1, β=1)</button>
-            <button class="preset-button" data-alpha="2" data-beta="2">Symmetric (α=2, β=2)</button>
-            <button class="preset-button" data-alpha="8" data-beta="8">Symmetric Peaked (α=8, β=8)</button>
-            <button class="preset-button" data-alpha="5" data-beta="1">Left Skewed (α=5, β=1)</button>
-            <button class="preset-button" data-alpha="1" data-beta="5">Right Skewed (α=1, β=5)</button>
-            <button class="preset-button" data-alpha="0.5" data-beta="0.5">U-Shaped (α=0.5, β=0.5)</button>
+        <h1>Beta Distribution Bayesian Updating</h1>
+        
+        <div class="section">
+            <h2>True Probability Setting</h2>
+            <div class="slider-container">
+                <label for="trueProbability">True Probability:</label>
+                <input type="range" id="trueProbabilitySlider" min="0" max="1" step="0.01" value="0.7">
+                <input type="number" id="trueProbabilityValue" min="0" max="1" step="0.01" value="0.7">
+            </div>
         </div>
-        <div class="controls">
-            <div class="parameter-control">
-                <label for="alpha">Alpha (α)</label>
-                <div class="slider-container">
-                    <input type="range" id="alphaSlider" min="0.1" max="10" step="0.1" value="2">
-                    <input type="number" id="alphaValue" min="0.1" max="10" step="0.1" value="2">
+
+        <div class="section">
+            <h2>Prior Parameters</h2>
+            <div class="controls">
+                <div>
+                    <label for="priorAlpha">Prior Alpha (α)</label>
+                    <div class="slider-container">
+                        <input type="range" id="priorAlphaSlider" min="0.1" max="10" step="0.1" value="1">
+                        <input type="number" id="priorAlphaValue" min="0.1" max="10" step="0.1" value="1">
+                    </div>
+                </div>
+                <div>
+                    <label for="priorBeta">Prior Beta (β)</label>
+                    <div class="slider-container">
+                        <input type="range" id="priorBetaSlider" min="0.1" max="10" step="0.1" value="1">
+                        <input type="number" id="priorBetaValue" min="0.1" max="10" step="0.1" value="1">
+                    </div>
                 </div>
             </div>
-            <div class="parameter-control">
-                <label for="beta">Beta (β)</label>
-                <div class="slider-container">
-                    <input type="range" id="betaSlider" min="0.1" max="10" step="0.1" value="2">
-                    <input type="number" id="betaValue" min="0.1" max="10" step="0.1" value="2">
+        </div>
+
+        <div class="section">
+            <h2>Simulation Controls</h2>
+            <div class="simulation-controls">
+                <button id="singleDraw">Single Draw</button>
+                <button id="tenDraws">10 Draws</button>
+                <button id="reset">Reset Simulation</button>
+            </div>
+            <div class="results">
+                <div>Draws: <span id="drawResults"></span></div>
+                <div>Successes: <span id="successCount">0</span> / <span id="totalDraws">0</span></div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Distribution Statistics</h2>
+            <div class="stats">
+                <div class="stat-row">
+                    <span>True Probability:</span>
+                    <span class="stat-value" id="trueProb">-</span>
+                </div>
+                <div class="stat-row">
+                    <span>Naive Estimate (Successes/Total):</span>
+                    <span class="stat-value" id="naiveEstimate">-</span>
+                </div>
+                <div class="stat-row">
+                    <span>Prior Mean:</span>
+                    <span class="stat-value" id="priorMean">-</span>
+                </div>
+                <div class="stat-row">
+                    <span>Posterior Mean:</span>
+                    <span class="stat-value" id="posteriorMean">-</span>
                 </div>
             </div>
         </div>
-        <div class="stats">
-            <div class="stat-row">
-                <span>Mean (μ):</span>
-                <span class="stat-value" id="mean">-</span>
-                <span class="formula">= α / (α + β)</span>
-            </div>
-            <div class="stat-row">
-                <span>Standard Deviation (σ):</span>
-                <span class="stat-value" id="stddev">-</span>
-                <span class="formula">= √[(αβ) / ((α + β)²(α + β + 1))]</span>
-            </div>
-        </div>
+
         <canvas id="betaChart"></canvas>
     </div>
 
@@ -150,21 +196,68 @@
             return Math.pow(x, a - 1) * Math.pow(1 - x, b - 1);
         }
 
+        // Find maximum value of beta function for normalization
+        function findBetaMax(alpha, beta) {
+            // For beta distribution, mode is at (alpha-1)/(alpha+beta-2) when alpha,beta > 1
+            // Otherwise need to check endpoints
+            let mode;
+            let maxVal;
+            
+            if (alpha >= 1 && beta >= 1) {
+                mode = (alpha - 1) / (alpha + beta - 2);
+                // If mode calculation is invalid (denominator = 0), check endpoints
+                if (!isFinite(mode) || mode <= 0 || mode >= 1) {
+                    maxVal = Math.max(
+                        betaFunction(0.001, alpha, beta),
+                        betaFunction(0.999, alpha, beta)
+                    );
+                } else {
+                    maxVal = betaFunction(mode, alpha, beta);
+                }
+            } else {
+                // For alpha or beta < 1, check near endpoints and potential internal max
+                maxVal = Math.max(
+                    betaFunction(0.001, alpha, beta),
+                    betaFunction(0.999, alpha, beta)
+                );
+                // Also check at x = 0.5 for potential internal maximum
+                maxVal = Math.max(maxVal, betaFunction(0.5, alpha, beta));
+            }
+            return maxVal;
+        }
+
+        // Calculate statistics
+        function calculateStats(alpha, beta) {
+            const mean = alpha / (alpha + beta);
+            const variance = (alpha * beta) / (Math.pow(alpha + beta, 2) * (alpha + beta + 1));
+            return {
+                mean: mean,
+                stdDev: Math.sqrt(variance)
+            };
+        }
+
         // Create chart
         const ctx = document.getElementById('betaChart').getContext('2d');
         const chart = new Chart(ctx, {
             type: 'line',
             data: {
                 datasets: [{
-                    label: 'Beta Distribution',
+                    label: 'Prior',
                     borderColor: '#4361ee',
                     borderWidth: 2,
                     pointRadius: 0,
                     fill: false
                 },
                 {
-                    label: 'Mean',
+                    label: 'Posterior',
                     borderColor: '#ff4444',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    fill: false
+                },
+                {
+                    label: 'True Probability',
+                    borderColor: '#00cc00',
                     borderWidth: 2,
                     borderDash: [6, 6],
                     pointRadius: 0,
@@ -180,137 +273,170 @@
                         type: 'linear',
                         title: {
                             display: true,
-                            text: 'x',
+                            text: 'Probability',
                             font: {
                                 size: 14,
                                 weight: 'bold'
-                            },
-                            padding: 10
+                            }
                         },
                         min: 0,
-                        max: 1,
-                        ticks: {
-                            font: {
-                                size: 12
-                            }
-                        }
+                        max: 1
                     },
                     y: {
                         type: 'linear',
                         title: {
                             display: true,
-                            text: 'Probability Density',
+                            text: 'Density',
                             font: {
                                 size: 14,
                                 weight: 'bold'
-                            },
-                            padding: 10
-                        },
-                        ticks: {
-                            font: {
-                                size: 12
                             }
                         }
                     }
                 },
                 plugins: {
-                    title: {
-                        display: true,
-                        text: 'Beta Distribution',
-                        font: {
-                            size: 18,
-                            weight: 'bold'
-                        },
-                        padding: 20
-                    },
                     legend: {
-                        display: false
+                        display: true,
+                        position: 'top'
                     }
                 }
             }
         });
 
-        // Update chart function
+        // Simulation state
+        let currentAlpha;
+        let currentBeta;
+        let drawHistory = [];
+
+        // Initialize simulation
+        function initializeSimulation() {
+            currentAlpha = parseFloat(document.getElementById('priorAlphaValue').value);
+            currentBeta = parseFloat(document.getElementById('priorBetaValue').value);
+            drawHistory = [];
+            document.getElementById('drawResults').textContent = '';
+            document.getElementById('successCount').textContent = '0';
+            document.getElementById('totalDraws').textContent = '0';
+            updateChart();
+        }
+
+        // Update chart
         function updateChart() {
-            const alpha = parseFloat(document.getElementById('alphaValue').value);
-            const beta = parseFloat(document.getElementById('betaValue').value);
-            
-            // Calculate mean and standard deviation
-            const mean = alpha / (alpha + beta);
-            const variance = (alpha * beta) / (Math.pow(alpha + beta, 2) * (alpha + beta + 1));
-            const stddev = Math.sqrt(variance);
-            
-            // Update statistics display
-            document.getElementById('mean').textContent = mean.toFixed(3);
-            document.getElementById('stddev').textContent = stddev.toFixed(3);
-            
-            // Generate points for the distribution
-            const points = [];
+            const priorAlpha = parseFloat(document.getElementById('priorAlphaValue').value);
+            const priorBeta = parseFloat(document.getElementById('priorBetaValue').value);
+            const trueProb = parseFloat(document.getElementById('trueProbabilityValue').value);
+
+            // Find maximum values for normalization
+            const priorMax = findBetaMax(priorAlpha, priorBeta);
+            const posteriorMax = findBetaMax(currentAlpha, currentBeta);
+
+            // Generate points for prior and posterior
+            const priorPoints = [];
+            const posteriorPoints = [];
             for (let x = 0; x <= 1; x += 0.01) {
-                points.push({
+                priorPoints.push({
                     x: x,
-                    y: betaFunction(x, alpha, beta)
+                    y: betaFunction(x, priorAlpha, priorBeta) / priorMax
+                });
+                posteriorPoints.push({
+                    x: x,
+                    y: betaFunction(x, currentAlpha, currentBeta) / posteriorMax
                 });
             }
 
-            // Create vertical line at mean
-            const maxY = Math.max(...points.map(p => p.y));
-            const meanLine = [
-                { x: mean, y: 0 },
-                { x: mean, y: maxY }
+            // Create vertical line for true probability
+            const trueProbLine = [
+                { x: trueProb, y: 0 },
+                { x: trueProb, y: 1 }
             ];
 
-            chart.data.labels = points.map(p => p.x);
-            chart.data.datasets[0].data = points;
-            chart.data.datasets[1].data = meanLine;
-            chart.options.plugins.title.text = `Beta Distribution (α=${alpha}, β=${beta})`;
+            // Update chart data
+            chart.data.datasets[0].data = priorPoints;
+            chart.data.datasets[1].data = posteriorPoints;
+            chart.data.datasets[2].data = trueProbLine;
+            
+            // Set fixed y-axis scale
+            chart.options.scales.y.min = 0;
+            chart.options.scales.y.max = 1;
+            
             chart.update();
+
+            // Update statistics
+            const priorStats = calculateStats(priorAlpha, priorBeta);
+            const posteriorStats = calculateStats(currentAlpha, currentBeta);
+            const naiveEstimate = drawHistory.length > 0 ? 
+                (drawHistory.filter(x => x).length / drawHistory.length).toFixed(3) : '-';
+
+            document.getElementById('trueProb').textContent = trueProb.toFixed(3);
+            document.getElementById('naiveEstimate').textContent = naiveEstimate;
+            document.getElementById('priorMean').textContent = priorStats.mean.toFixed(3);
+            document.getElementById('posteriorMean').textContent = posteriorStats.mean.toFixed(3);
         }
 
-        // Event listeners for sliders and number inputs
-        const alphaSlider = document.getElementById('alphaSlider');
-        const betaSlider = document.getElementById('betaSlider');
-        const alphaValue = document.getElementById('alphaValue');
-        const betaValue = document.getElementById('betaValue');
+        // Perform draws
+        function performDraws(numDraws) {
+            const trueProb = parseFloat(document.getElementById('trueProbabilityValue').value);
+            
+            for (let i = 0; i < numDraws; i++) {
+                const success = Math.random() < trueProb;
+                drawHistory.push(success);
+                
+                // Update alpha and beta
+                if (success) {
+                    currentAlpha += 1;
+                } else {
+                    currentBeta += 1;
+                }
+            }
 
-        // Add event listeners for preset buttons
-        document.querySelectorAll('.preset-button').forEach(button => {
-            button.addEventListener('click', function() {
-                const alpha = parseFloat(this.dataset.alpha);
-                const beta = parseFloat(this.dataset.beta);
-                
-                // Update both sliders and number inputs
-                alphaSlider.value = alpha;
-                betaSlider.value = beta;
-                alphaValue.value = alpha;
-                betaValue.value = beta;
-                
-                updateChart();
+            // Update display
+            const successCount = drawHistory.filter(x => x).length;
+            const lastTenDraws = drawHistory.slice(-10);
+            document.getElementById('drawResults').textContent = 
+                (drawHistory.length > 10 ? '... ' : '') + 
+                lastTenDraws.map(x => x ? '1' : '0').join(' ');
+            document.getElementById('successCount').textContent = successCount;
+            document.getElementById('totalDraws').textContent = drawHistory.length;
+
+            updateChart();
+        }
+
+        // Event listeners
+        document.getElementById('singleDraw').addEventListener('click', () => performDraws(1));
+        document.getElementById('tenDraws').addEventListener('click', () => performDraws(10));
+        document.getElementById('reset').addEventListener('click', initializeSimulation);
+
+        // Prior parameter controls
+        ['Alpha', 'Beta'].forEach(param => {
+            const slider = document.getElementById(`prior${param}Slider`);
+            const value = document.getElementById(`prior${param}Value`);
+            
+            slider.addEventListener('input', function() {
+                value.value = this.value;
+                initializeSimulation();
+            });
+
+            value.addEventListener('input', function() {
+                slider.value = this.value;
+                initializeSimulation();
             });
         });
 
-        alphaSlider.addEventListener('input', function() {
-            alphaValue.value = this.value;
+        // True probability controls
+        const trueSlider = document.getElementById('trueProbabilitySlider');
+        const trueValue = document.getElementById('trueProbabilityValue');
+
+        trueSlider.addEventListener('input', function() {
+            trueValue.value = this.value;
             updateChart();
         });
 
-        betaSlider.addEventListener('input', function() {
-            betaValue.value = this.value;
+        trueValue.addEventListener('input', function() {
+            trueSlider.value = this.value;
             updateChart();
         });
 
-        alphaValue.addEventListener('input', function() {
-            alphaSlider.value = this.value;
-            updateChart();
-        });
-
-        betaValue.addEventListener('input', function() {
-            betaSlider.value = this.value;
-            updateChart();
-        });
-
-        // Initial chart update
-        updateChart();
+        // Initialize
+        initializeSimulation();
     </script>
 </body>
 </html>
