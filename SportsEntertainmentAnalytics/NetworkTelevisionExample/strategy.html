@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TV Network Strategy Comparison</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f4f7;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            text-align: center;
+        }
+
+        h1 {
+            color: #2c3e50;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            margin-left: 10px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .stats-container {
+            margin: 20px auto;
+            max-width: 600px;
+        }
+
+        .summary-stats {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #f8f9fa;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .summary-stats th,
+        .summary-stats td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .summary-stats th {
+            background-color: #e9ecef;
+            font-weight: bold;
+        }
+
+        .summary-stats tr:hover {
+            background-color: #f2f2f2;
+        }
+
+        .strategy-controls {
+            text-align: center;
+            padding: 15px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }
+
+        .strategy-controls h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+
+        .strategy-controls input[type="number"] {
+            width: 80px;
+            margin: 0 10px;
+            padding: 5px;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+        }
+
+        .tabs {
+            margin: 20px 0;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .tab-button {
+            padding: 10px 20px;
+            margin: 0 5px;
+            font-size: 1.1em;
+            background: none;
+            border: none;
+            border-radius: 5px 5px 0 0;
+            cursor: pointer;
+            color: #7f8c8d;
+        }
+
+        .tab-button:hover {
+            background-color: #edf2f7;
+        }
+
+        .tab-button.active {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .nav-button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+
+        .nav-button:hover {
+            background-color: #2980b9;
+        }
+
+        .navigation {
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .distribution-info {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: left;
+        }
+
+        .distribution-info h3 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+
+        .distribution-info ul {
+            list-style-type: none;
+            padding-left: 20px;
+        }
+
+        .distribution-info li {
+            margin: 10px 0;
+            color: #34495e;
+        }
+
+        .distribution-info p {
+            color: #34495e;
+            margin: 15px 0 5px;
+        }
+
+        .settings-group {
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .settings-group label {
+            margin-right: 10px;
+        }
+
+        .results-container {
+            margin-top: 30px;
+        }
+
+        @media (max-width: 600px) {
+            button {
+                width: 100%;
+                margin-top: 10px;
+            }
+        }
+
+        .chart-container {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            height: 400px;
+        }
+        
+        .chart-container h3 {
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+    </style>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>TV Network Strategy Comparison</h1>
+        
+        <div class="tabs">
+            <button class="tab-button active" data-tab="normal">Normal Distribution</button>
+            <button class="tab-button" data-tab="gamma">Gamma Distribution</button>
+        </div>
+
+        <div class="tab-content" id="normal-tab">
+            <div class="distribution-info">
+                <h3>Normal Distribution Parameters</h3>
+                <p>For new shows:</p>
+                <ul>
+                    <li>Mean (μ) = 5.0</li>
+                    <li>Standard Deviation (σ) = 2.0</li>
+                </ul>
+                <p>For continuing shows:</p>
+                <ul>
+                    <li>Mean (μ) = Previous rating - 0.25</li>
+                    <li>Standard Deviation (σ) = 1.0</li>
+                </ul>
+                <p>All ratings are capped between 0 and 10.</p>
+            </div>
+
+            <div class="strategy-controls">
+                <h3>Strategy Settings</h3>
+                <div class="settings-group">
+                    <label for="ratingThreshold">Rating Threshold for Show Replacement:</label>
+                    <input type="number" id="ratingThreshold" min="0" max="10" step="0.1" value="5.0">
+                </div>
+                <div class="settings-group">
+                    <label for="numSimulations">Number of Simulations:</label>
+                    <input type="number" id="numSimulations" min="100" max="10000" step="100" value="1000">
+                </div>
+                <button id="runSimulation">Run Simulations</button>
+                <button id="findOptimalNormal">Find Optimal Threshold</button>
+            </div>
+
+            <div class="results-container">
+                <div class="stats-container">
+                    <table class="summary-stats">
+                        <thead>
+                            <tr>
+                                <th>Statistic</th>
+                                <th>Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Average Total Rating</td>
+                                <td id="avgTotalRating">-</td>
+                            </tr>
+                            <tr>
+                                <td>Standard Deviation</td>
+                                <td id="stdDevRating">-</td>
+                            </tr>
+                            <tr>
+                                <td>Best Run</td>
+                                <td id="bestRun">-</td>
+                            </tr>
+                            <tr>
+                                <td>Worst Run</td>
+                                <td id="worstRun">-</td>
+                            </tr>
+                            <tr>
+                                <td>Average Shows per Run</td>
+                                <td id="avgShows">-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="chart-container" id="normalOptimalChart" style="display: none;">
+                <h3>Average Total Rating by Threshold</h3>
+                <canvas id="normalThresholdChart"></canvas>
+            </div>
+        </div>
+
+        <div class="tab-content" id="gamma-tab" style="display: none;">
+            <div class="distribution-info">
+                <h3>Gamma Distribution Parameters</h3>
+                <p>For new shows:</p>
+                <ul>
+                    <li>Shape (α) = 6.25</li>
+                    <li>Scale (θ) = 0.8</li>
+                    <li>Mean (μ) = 5.0</li>
+                    <li>Standard Deviation (σ) ≈ 2.0</li>
+                </ul>
+                <p>For continuing shows:</p>
+                <ul>
+                    <li>Mean (μ) = Previous rating - 0.25</li>
+                    <li>Standard Deviation (σ) = 1.0</li>
+                    <li>(Uses normal distribution)</li>
+                </ul>
+                <p>All ratings are capped between 0 and 10.</p>
+            </div>
+
+            <div class="strategy-controls">
+                <h3>Strategy Settings</h3>
+                <div class="settings-group">
+                    <label for="gammaRatingThreshold">Rating Threshold for Show Replacement:</label>
+                    <input type="number" id="gammaRatingThreshold" min="0" max="10" step="0.1" value="5.0">
+                </div>
+                <div class="settings-group">
+                    <label for="gammaNumSimulations">Number of Simulations:</label>
+                    <input type="number" id="gammaNumSimulations" min="100" max="10000" step="100" value="1000">
+                </div>
+                <button id="runGammaSimulation">Run Simulations</button>
+                <button id="findOptimalGamma">Find Optimal Threshold</button>
+            </div>
+
+            <div class="results-container">
+                <div class="stats-container">
+                    <table class="summary-stats">
+                        <thead>
+                            <tr>
+                                <th>Statistic</th>
+                                <th>Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Average Total Rating</td>
+                                <td id="gammaAvgTotalRating">-</td>
+                            </tr>
+                            <tr>
+                                <td>Standard Deviation</td>
+                                <td id="gammaStdDevRating">-</td>
+                            </tr>
+                            <tr>
+                                <td>Best Run</td>
+                                <td id="gammaBestRun">-</td>
+                            </tr>
+                            <tr>
+                                <td>Worst Run</td>
+                                <td id="gammaWorstRun">-</td>
+                            </tr>
+                            <tr>
+                                <td>Average Shows per Run</td>
+                                <td id="gammaAvgShows">-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="chart-container" id="gammaOptimalChart" style="display: none;">
+                <h3>Average Total Rating by Threshold</h3>
+                <canvas id="gammaThresholdChart"></canvas>
+            </div>
+        </div>
+
+        <div class="navigation">
+            <a href="index.html" class="nav-button">Back to Game</a>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Tab switching functionality
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.style.display = 'none');
+                    
+                    button.classList.add('active');
+                    const tabId = button.getAttribute('data-tab');
+                    document.getElementById(`${tabId}-tab`).style.display = 'block';
+                });
+            });
+
+            // Normal distribution parameters
+            const NORMAL_PARAMS = {
+                new: {
+                    mean: 5.0,
+                    stdDev: 2.0
+                },
+                continuing: {
+                    meanDecline: 0.25,
+                    stdDev: 1.0
+                }
+            };
+
+            function generateNormal(mean, stdDev) {
+                // Box-Muller transform
+                let u1 = Math.random();
+                let u2 = Math.random();
+                
+                let z = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+                return mean + stdDev * z;
+            }
+
+            function generateRating(isNew, previousRating = null) {
+                let rating;
+                if (isNew) {
+                    rating = generateNormal(NORMAL_PARAMS.new.mean, NORMAL_PARAMS.new.stdDev);
+                } else {
+                    const mean = previousRating - NORMAL_PARAMS.continuing.meanDecline;
+                    rating = generateNormal(mean, NORMAL_PARAMS.continuing.stdDev);
+                }
+                return Math.max(0, Math.min(10, rating));
+            }
+
+            function runSingleSimulation(ratingThreshold) {
+                let ratings = [];
+                let currentRating = generateRating(true);
+                let numShows = 1;
+                
+                ratings.push(currentRating);
+                
+                for (let year = 2; year <= 20; year++) {
+                    if (currentRating < ratingThreshold) {
+                        // Try a new show
+                        currentRating = generateRating(true);
+                        numShows++;
+                    } else {
+                        // Keep current show
+                        currentRating = generateRating(false, currentRating);
+                    }
+                    ratings.push(currentRating);
+                }
+                
+                const totalRating = ratings.reduce((a, b) => a + b, 0);
+                return {
+                    totalRating,
+                    ratings,
+                    numShows
+                };
+            }
+
+            function calculateStats(results) {
+                const totalRatings = results.map(r => r.totalRating);
+                const numShows = results.map(r => r.numShows);
+                
+                const avgTotalRating = totalRatings.reduce((a, b) => a + b, 0) / results.length;
+                const variance = totalRatings.reduce((a, b) => a + Math.pow(b - avgTotalRating, 2), 0) / results.length;
+                const stdDev = Math.sqrt(variance);
+                const bestRun = Math.max(...totalRatings);
+                const worstRun = Math.min(...totalRatings);
+                const avgShows = numShows.reduce((a, b) => a + b, 0) / results.length;
+
+                return {
+                    avgTotalRating,
+                    stdDev,
+                    bestRun,
+                    worstRun,
+                    avgShows
+                };
+            }
+
+            function updateDisplay(stats) {
+                document.getElementById('avgTotalRating').textContent = stats.avgTotalRating.toFixed(1);
+                document.getElementById('stdDevRating').textContent = stats.stdDev.toFixed(1);
+                document.getElementById('bestRun').textContent = stats.bestRun.toFixed(1);
+                document.getElementById('worstRun').textContent = stats.worstRun.toFixed(1);
+                document.getElementById('avgShows').textContent = stats.avgShows.toFixed(1);
+            }
+
+            document.getElementById('runSimulation').addEventListener('click', () => {
+                const ratingThreshold = parseFloat(document.getElementById('ratingThreshold').value);
+                const numSimulations = parseInt(document.getElementById('numSimulations').value);
+                
+                const results = [];
+                for (let i = 0; i < numSimulations; i++) {
+                    results.push(runSingleSimulation(ratingThreshold));
+                }
+                
+                const stats = calculateStats(results);
+                updateDisplay(stats);
+            });
+
+            // Gamma distribution parameters
+            const GAMMA_PARAMS = {
+                new: {
+                    shape: 1,  // α
+                    scale: 5,   // θ
+                    // This gives mean = α * θ = 5.0
+                    // and stdDev = √(α * θ²) ≈ 2.0
+                },
+                continuing: {
+                    meanDecline: 0.25,
+                    targetStdDev: 1.0
+                }
+            };
+
+            function generateGamma(shape, scale) {
+                // Marsaglia and Tsang's method
+                let d = shape - 1/3;
+                let c = 1 / Math.sqrt(9*d);
+                while (true) {
+                    let x = generateNormal(0, 1);
+                    let v = Math.pow(1 + c*x, 3);
+                    if (v > 0) {
+                        let u = Math.random();
+                        if (Math.log(u) < 0.5*x*x + d - d*v + d*Math.log(v)) {
+                            return d*v * scale;
+                        }
+                    }
+                }
+            }
+
+            function generateGammaRating(isNew, previousRating = null) {
+                let rating;
+                if (isNew) {
+                    rating = generateGamma(GAMMA_PARAMS.new.shape, GAMMA_PARAMS.new.scale);
+                } else {
+                    // Use normal distribution for continuing shows
+                    const mean = previousRating - GAMMA_PARAMS.continuing.meanDecline;
+                    rating = generateNormal(mean, GAMMA_PARAMS.continuing.targetStdDev);
+                }
+                return Math.max(0, Math.min(10, rating));
+            }
+
+            function runSingleGammaSimulation(ratingThreshold) {
+                let ratings = [];
+                let currentRating = generateGammaRating(true);
+                let numShows = 1;
+                
+                ratings.push(currentRating);
+                
+                for (let year = 2; year <= 20; year++) {
+                    if (currentRating < ratingThreshold) {
+                        // Try a new show
+                        currentRating = generateGammaRating(true);
+                        numShows++;
+                    } else {
+                        // Keep current show
+                        currentRating = generateGammaRating(false, currentRating);
+                    }
+                    ratings.push(currentRating);
+                }
+                
+                const totalRating = ratings.reduce((a, b) => a + b, 0);
+                return {
+                    totalRating,
+                    ratings,
+                    numShows
+                };
+            }
+
+            function updateGammaDisplay(stats) {
+                document.getElementById('gammaAvgTotalRating').textContent = stats.avgTotalRating.toFixed(1);
+                document.getElementById('gammaStdDevRating').textContent = stats.stdDev.toFixed(1);
+                document.getElementById('gammaBestRun').textContent = stats.bestRun.toFixed(1);
+                document.getElementById('gammaWorstRun').textContent = stats.worstRun.toFixed(1);
+                document.getElementById('gammaAvgShows').textContent = stats.avgShows.toFixed(1);
+            }
+
+            document.getElementById('runGammaSimulation').addEventListener('click', () => {
+                const ratingThreshold = parseFloat(document.getElementById('gammaRatingThreshold').value);
+                const numSimulations = parseInt(document.getElementById('gammaNumSimulations').value);
+                
+                const results = [];
+                for (let i = 0; i < numSimulations; i++) {
+                    results.push(runSingleGammaSimulation(ratingThreshold));
+                }
+                
+                const stats = calculateStats(results);
+                updateGammaDisplay(stats);
+            });
+
+            function findOptimalThreshold(simulationFunc, updateChart) {
+                const numSimulations = 500; // Use a fixed number of simulations per threshold
+                const thresholds = Array.from({length: 21}, (_, i) => i * 0.5); // 0 to 10 in 0.5 increments
+                const averages = [];
+
+                thresholds.forEach(threshold => {
+                    const results = [];
+                    for (let i = 0; i < numSimulations; i++) {
+                        results.push(simulationFunc(threshold));
+                    }
+                    const stats = calculateStats(results);
+                    averages.push(stats.avgTotalRating);
+                });
+
+                const optimalThreshold = thresholds[averages.indexOf(Math.max(...averages))];
+                
+                updateChart(thresholds, averages, optimalThreshold);
+                
+                return optimalThreshold;
+            }
+
+            function createOrUpdateChart(chartId, labels, data, optimalThreshold) {
+                const ctx = document.getElementById(chartId).getContext('2d');
+                
+                // Destroy existing chart if it exists
+                const existingChart = Chart.getChart(chartId);
+                if (existingChart) {
+                    existingChart.destroy();
+                }
+
+                const optimalIndex = labels.indexOf(optimalThreshold);
+                const backgroundColor = Array(labels.length).fill('rgba(52, 152, 219, 0.5)');
+                backgroundColor[optimalIndex] = 'rgba(46, 204, 113, 0.8)';
+
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Average Total Rating',
+                            data: data,
+                            borderColor: 'rgba(52, 152, 219, 1)',
+                            backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: `Optimal Threshold: ${optimalThreshold.toFixed(1)} (Avg Rating: ${Math.max(...data).toFixed(1)})`
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Rating Threshold'
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Average Total Rating'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            document.getElementById('findOptimalNormal').addEventListener('click', () => {
+                document.getElementById('normalOptimalChart').style.display = 'block';
+                const optimalThreshold = findOptimalThreshold(
+                    runSingleSimulation,
+                    (thresholds, averages, optimal) => createOrUpdateChart('normalThresholdChart', thresholds, averages, optimal)
+                );
+                document.getElementById('ratingThreshold').value = optimalThreshold.toFixed(1);
+            });
+
+            document.getElementById('findOptimalGamma').addEventListener('click', () => {
+                document.getElementById('gammaOptimalChart').style.display = 'block';
+                const optimalThreshold = findOptimalThreshold(
+                    runSingleGammaSimulation,
+                    (thresholds, averages, optimal) => createOrUpdateChart('gammaThresholdChart', thresholds, averages, optimal)
+                );
+                document.getElementById('gammaRatingThreshold').value = optimalThreshold.toFixed(1);
+            });
+        });
+    </script>
+</body>
+</html> 

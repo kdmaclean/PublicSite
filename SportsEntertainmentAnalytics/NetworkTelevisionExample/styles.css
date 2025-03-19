@@ -67,21 +67,8 @@ button:hover {
     100% { transform: rotate(360deg); }
 }
 
-.chart-container {
-    position: relative;
-    height: 400px;
-    width: 100%;
-}
-
-@media (max-width: 600px) {
-    .chart-container {
-        height: 300px;
-    }
-
-    button {
-        width: 100%;
-        margin-top: 10px;
-    }
+.chart-container, .chart-container h3, .chart-placeholder, #distributionChart, #averageRatingsChart, #distributionChart.active, #averageRatingsChart.active {
+    display: none;
 }
 
 .simulation-type {
@@ -346,4 +333,72 @@ button:disabled {
 .pilot-stats p {
     margin: 5px 0;
     color: #2c3e50;
+}
+
+.settings-group {
+    margin: 15px 0;
+    text-align: center;
+}
+
+.settings-group label {
+    margin-right: 10px;
+}
+
+.settings-group input {
+    width: 100px;
+    padding: 5px;
+    border: 1px solid #bdc3c7;
+    border-radius: 4px;
+}
+
+.results-container {
+    margin-top: 30px;
+}
+
+.nav-button {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #3498db;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    margin: 20px 0;
+}
+
+.nav-button:hover {
+    background-color: #2980b9;
+}
+
+.navigation {
+    margin: 30px 0;
+    text-align: center;
+}
+
+.distribution-info {
+    background: white;
+    padding: 20px;
+    margin: 20px 0;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-align: left;
+}
+
+.distribution-info h3 {
+    color: #2c3e50;
+    margin-top: 0;
+}
+
+.distribution-info ul {
+    list-style-type: none;
+    padding-left: 20px;
+}
+
+.distribution-info li {
+    margin: 10px 0;
+    color: #34495e;
+}
+
+.distribution-info p {
+    color: #34495e;
+    margin: 15px 0 5px;
 }
