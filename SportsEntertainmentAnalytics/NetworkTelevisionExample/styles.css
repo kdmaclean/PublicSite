@@ -67,9 +67,6 @@ button:hover {
     100% { transform: rotate(360deg); }
 }
 
-.chart-container, .chart-container h3, .chart-placeholder, #distributionChart, #averageRatingsChart, #distributionChart.active, #averageRatingsChart.active {
-    display: none;
-}
 
 .simulation-type {
     margin: 20px 0;
